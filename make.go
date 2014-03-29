@@ -112,7 +112,6 @@ func (m *Maker) TargetSets() [][]string {
 	return m.topo
 }
 
-// TODO!(sqs): use goals
 func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 	for _, goal := range m.goals {
 		if rule := m.mf.Rule(goal); rule == nil {
