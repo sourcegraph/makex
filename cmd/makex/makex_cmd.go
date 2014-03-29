@@ -84,15 +84,7 @@ The options are:
 	}
 
 	if conf.DryRun {
-		for i, targetSet := range targetSets {
-			if i != 0 {
-				fmt.Println()
-			}
-			fmt.Printf("========= TARGET SET %d (%d targets)\n", i, len(targetSet))
-			for _, target := range targetSet {
-				fmt.Println(" - ", target)
-			}
-		}
+		mk.DryRun(os.Stdout)
 		return
 	}
 

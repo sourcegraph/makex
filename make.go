@@ -153,6 +153,25 @@ func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 	return targetSets, nil
 }
 
+// DryRun prints information about what targets *would* be built if Run() was
+// called.
+func (m *Maker) DryRun(w io.Writer) error {
+	targetSets, err := m.TargetSetsNeedingBuild()
+	if err != nil {
+		return err
+	}
+	for i, targetSet := range targetSets {
+		if i != 0 {
+			fmt.Fprintln(w)
+		}
+		fmt.Fprintf(w, "========= TARGET SET %d (%d targets)\n", i, len(targetSet))
+		for _, target := range targetSet {
+			fmt.Fprintln(w, " - ", target)
+		}
+	}
+	return nil
+}
+
 func (m *Maker) Run() error {
 	targetSets, err := m.TargetSetsNeedingBuild()
 	if err != nil {
