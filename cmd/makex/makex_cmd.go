@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/sourcegraph/makex"
 )
@@ -54,8 +55,15 @@ The options are:
 	}
 
 	goals := flag.Args()
-	if len(goals) == 0 && len(mf.Rules) > 0 {
-		goals = []string{mf.Rules[0].Target()}
+	if len(goals) == 0 {
+		// Find the first rule that doesn't begin with a ".".
+		for _, rule := range mf.Rules {
+			target := rule.Target()
+			if !strings.HasPrefix(target, ".") {
+				goals = []string{target}
+				break
+			}
+		}
 	}
 
 	mk := conf.NewMaker(mf, goals...)
