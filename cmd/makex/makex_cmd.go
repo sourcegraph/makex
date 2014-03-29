@@ -6,18 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/sourcegraph/makex"
 )
-
-var file = flag.String("f", "Makefile", "path to Makefile")
-var cwd = flag.String("C", "", "change to this directory before doing anything")
-var dryRun = flag.Bool("n", false, "dry run (don't actually run any commands)")
-var jobs = flag.Int("j", runtime.GOMAXPROCS(0), "number of jobs to run in parallel")
-var expand = flag.Bool("x", true, "expand globs in makefile prereqs")
-var v = flag.Bool("v", false, "verbose")
 
 func main() {
 	flag.Usage = func() {
@@ -36,18 +28,18 @@ The options are:
 		os.Exit(1)
 	}
 
+	fd := makex.Flags(nil, "")
 	flag.Parse()
 	conf := makex.Default
-	conf.ParallelJobs = *jobs
-	conf.Verbose = *v
+	fd.SetConfig(&conf)
 
-	data, err := ioutil.ReadFile(*file)
+	data, err := ioutil.ReadFile(fd.Makefile)
 	if err != nil {
 		conf.Log.Fatal(err)
 	}
 
-	if *cwd != "" {
-		err := os.Chdir(*cwd)
+	if fd.Dir != "" {
+		err := os.Chdir(fd.Dir)
 		if err != nil {
 			conf.Log.Fatal(err)
 		}
@@ -70,7 +62,7 @@ The options are:
 		}
 	}
 
-	if *expand {
+	if fd.Expand {
 		mf, err = conf.Expand(mf)
 		if err != nil {
 			log.Fatal(err)
@@ -88,7 +80,7 @@ The options are:
 		fmt.Println("Nothing to do.")
 	}
 
-	if *dryRun {
+	if fd.DryRun {
 		for i, targetSet := range targetSets {
 			if i != 0 {
 				fmt.Println()
