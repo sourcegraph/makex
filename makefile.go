@@ -3,10 +3,11 @@ package makex
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/sourcegraph/rwvfs"
 )
 
 type Makefile struct {
@@ -63,7 +64,7 @@ func (c *Config) Expand(orig *Makefile) (*Makefile, error) {
 		if hasGlob {
 			var expandedPrereqs []string
 			for _, target := range rule.Prereqs() {
-				files, err := filepath.Glob(target)
+				files, err := rwvfs.Glob(walkableRWVFS{c.FS}, "", target)
 				if err != nil {
 					return nil, err
 				}
