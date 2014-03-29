@@ -48,8 +48,6 @@ type Rule interface {
 // contain globs, they are replaced with BasicRules with the globs expanded.
 //
 // Only globs containing "*" are detected.
-//
-// TODO(sqs): make this use the c.FS.
 func (c *Config) Expand(orig *Makefile) (*Makefile, error) {
 	var mf Makefile
 	mf.Rules = make([]Rule, len(orig.Rules))
@@ -64,7 +62,7 @@ func (c *Config) Expand(orig *Makefile) (*Makefile, error) {
 		if hasGlob {
 			var expandedPrereqs []string
 			for _, target := range rule.Prereqs() {
-				files, err := rwvfs.Glob(walkableRWVFS{c.FS}, "", target)
+				files, err := rwvfs.Glob(walkableRWVFS{c.fs()}, "", target)
 				if err != nil {
 					return nil, err
 				}
