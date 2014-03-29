@@ -11,46 +11,44 @@ import (
 	"strings"
 )
 
+type Makefile struct {
+	Rules []Rule
+}
+
 type Rule interface {
 	Target() string
 	Prereqs() []string
 	Recipes() []string
 }
 
-func Makefile(rules []Rule, header []string) ([]byte, error) {
-	var mf bytes.Buffer
-
-	for _, v := range header {
-		fmt.Fprintln(&mf, v)
-	}
-	if len(header) > 0 {
-		fmt.Fprintln(&mf)
-	}
+func Marshal(mf *Makefile) ([]byte, error) {
+	var b bytes.Buffer
 
 	var all []string
-	for _, rule := range rules {
+	for _, rule := range mf.Rules {
 		ruleName := rule.Target()
 		all = append(all, ruleName)
 	}
 	if len(all) > 0 {
-		fmt.Fprintf(&mf, "all: %s\n", strings.Join(all, " "))
+		fmt.Fprintln(&b, ".PHONY: all")
+		fmt.Fprintf(&b, "all: %s\n", strings.Join(all, " "))
 	}
 
-	for _, rule := range rules {
-		fmt.Fprintln(&mf)
+	for _, rule := range mf.Rules {
+		fmt.Fprintln(&b)
 
 		ruleName := rule.Target()
-		fmt.Fprintf(&mf, "%s:", ruleName)
+		fmt.Fprintf(&b, "%s:", ruleName)
 		for _, prereq := range rule.Prereqs() {
-			fmt.Fprintf(&mf, " %s", prereq)
+			fmt.Fprintf(&b, " %s", prereq)
 		}
-		fmt.Fprintln(&mf)
+		fmt.Fprintln(&b)
 		for _, recipe := range rule.Recipes() {
-			fmt.Fprintf(&mf, "\t%s\n", recipe)
+			fmt.Fprintf(&b, "\t%s\n", recipe)
 		}
 	}
 
-	return mf.Bytes(), nil
+	return b.Bytes(), nil
 }
 
 func Make(dir string, makefile []byte, args []string) error {

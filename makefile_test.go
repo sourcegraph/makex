@@ -15,7 +15,7 @@ func (r *dummyRule) Target() string    { return r.target }
 func (r *dummyRule) Prereqs() []string { return r.prereqs }
 func (r *dummyRule) Recipes() []string { return r.recipes }
 
-func TestMakefile(t *testing.T) {
+func TestMarshal(t *testing.T) {
 	tests := []struct {
 		rules    []Rule
 		makefile string
@@ -29,6 +29,7 @@ func TestMakefile(t *testing.T) {
 				},
 			},
 			makefile: `
+.PHONY: all
 all: myTarget
 
 myTarget: myPrereq0 myPrereq1
@@ -37,7 +38,7 @@ myTarget: myPrereq0 myPrereq1
 		},
 	}
 	for _, test := range tests {
-		makefile, err := Makefile(test.rules, nil)
+		makefile, err := Marshal(&Makefile{test.rules})
 		if err != nil {
 			t.Error(err)
 			continue
