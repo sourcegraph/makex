@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/makex"
 )
 
+var expand = flag.Bool("x", true, "expand globs in makefile prereqs")
+
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, `makex is an experimental, incomplete implementation of make in Go.
@@ -62,7 +64,7 @@ The options are:
 		}
 	}
 
-	if fd.Expand {
+	if *expand {
 		mf, err = conf.Expand(mf)
 		if err != nil {
 			log.Fatal(err)

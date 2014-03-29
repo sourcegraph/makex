@@ -10,7 +10,6 @@ type FlagData struct {
 	Dir          string
 	DryRun       bool
 	ParallelJobs int
-	Expand       bool
 	Verbose      bool
 }
 
@@ -30,7 +29,6 @@ func Flags(fs *flag.FlagSet, prefix string) *FlagData {
 	fs.StringVar(&d.Dir, prefix+"C", "", "change to this directory before doing anything")
 	fs.BoolVar(&d.DryRun, prefix+"n", false, "dry run (don't actually run any commands)")
 	fs.IntVar(&d.ParallelJobs, prefix+"j", runtime.GOMAXPROCS(0), "number of jobs to run in parallel")
-	fs.BoolVar(&d.Expand, prefix+"x", true, "expand globs in makefile prereqs")
 	fs.BoolVar(&d.Verbose, prefix+"v", false, "verbose")
 	return &d
 }
