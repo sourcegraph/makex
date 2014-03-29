@@ -1,0 +1,7 @@
+default: /tmp/x0 /tmp/x1 /tmp/y0
+
+/tmp/x0: /tmp/y0 /tmp/y1 /tmp/x1
+/tmp/x1: /tmp/y0 /tmp/y1
+
+/tmp/y0: /tmp/y1
+	echo hello bar > /tmp/y
