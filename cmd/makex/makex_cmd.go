@@ -15,12 +15,17 @@ var cwd = flag.String("C", "", "change to this directory before doing anything")
 var dryRun = flag.Bool("n", false, "dry run (don't actually run any commands)")
 
 func main() {
+	log := log.New(os.Stderr, "makex: ", 0)
+
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, `makex is an experimental, incomplete implementation of make in Go.
 
 Usage:
 
         makex [options] [target] ...
+
+If no targets are specified, the first target that appears in the makefile is
+used.
 
 The options are:
 `)
@@ -29,7 +34,6 @@ The options are:
 	}
 
 	flag.Parse()
-	goals := flag.Args()
 
 	if *cwd != "" {
 		err := os.Chdir(*cwd)
@@ -48,13 +52,21 @@ The options are:
 		log.Fatal(err)
 	}
 
+	goals := flag.Args()
+	if len(goals) == 0 && len(mf.Rules) > 0 {
+		goals = []string{mf.Rules[0].Target()}
+	}
+
 	conf := makex.Default
-	mk := conf.NewMaker(mf)
-	targetSets, err := mk.TargetSetsNeedingBuild(goals...)
+	mk := conf.NewMaker(mf, goals...)
+	targetSets, err := mk.TargetSetsNeedingBuild()
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	if len(targetSets) == 0 {
+		fmt.Println("Nothing to do.")
+	}
 	for _, targetSet := range targetSets {
 		fmt.Println(targetSet)
 	}

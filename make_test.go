@@ -45,6 +45,37 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			goals: []string{"x0"},
 			wantTargetSetsNeedingBuild: [][]string{{"x1"}, {"x0"}},
 		},
+
+		"don't build targets that don't directly achieve goals (simple)": {
+			mf: &Makefile{Rules: []Rule{
+				&BasicRule{TargetFile: "x0"},
+				&BasicRule{TargetFile: "x1"},
+			}},
+			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals: []string{"x0"},
+			wantTargetSetsNeedingBuild: [][]string{{"x0"}},
+		},
+		"don't build targets that don't achieve goals (complex)": {
+			mf: &Makefile{Rules: []Rule{
+				&BasicRule{TargetFile: "x0", PrereqFiles: []string{"y"}},
+				&BasicRule{TargetFile: "x1"},
+				&BasicRule{TargetFile: "y"},
+			}},
+			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals: []string{"x0"},
+			wantTargetSetsNeedingBuild: [][]string{{"y"}, {"x0"}},
+		},
+		"don't build targets that don't achieve goals (even when a common prereq is satisfied)": {
+			mf: &Makefile{Rules: []Rule{
+				&BasicRule{TargetFile: "x0", PrereqFiles: []string{"y"}},
+				&BasicRule{TargetFile: "x1", PrereqFiles: []string{"y"}},
+				&BasicRule{TargetFile: "y"},
+			}},
+			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals: []string{"x0"},
+			wantTargetSetsNeedingBuild: [][]string{{"y"}, {"x0"}},
+		},
+
 		"don't build goal targets more than once": {
 			mf: &Makefile{Rules: []Rule{
 				&BasicRule{TargetFile: "x0"},
@@ -84,8 +115,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 
 	for label, test := range tests {
 		conf := &Config{FS: test.fs}
-		mk := conf.NewMaker(test.mf)
-		targetSets, err := mk.TargetSetsNeedingBuild(test.goals...)
+		mk := conf.NewMaker(test.mf, test.goals...)
+		targetSets, err := mk.TargetSetsNeedingBuild()
 		if !reflect.DeepEqual(err, test.wantErr) {
 			if test.wantErr == nil {
 				t.Errorf("%s: TargetsNeedingBuild(%q): error: %s", label, test.goals, err)

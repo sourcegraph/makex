@@ -3,9 +3,10 @@ package makex
 import "fmt"
 
 // TargetsNeedingBuild returns an ordered list of target sets
-func (c *Config) NewMaker(mf *Makefile) *Maker {
+func (c *Config) NewMaker(mf *Makefile, goals ...string) *Maker {
 	m := &Maker{
 		mf:     mf,
+		goals:  goals,
 		Config: c,
 	}
 	m.buildDAG()
@@ -14,6 +15,7 @@ func (c *Config) NewMaker(mf *Makefile) *Maker {
 
 type Maker struct {
 	mf     *Makefile
+	goals  []string
 	dag    map[string][]string
 	topo   [][]string
 	cycles map[string][]string
@@ -30,27 +32,31 @@ func (m *Maker) buildDAG() {
 		m.cycles = make(map[string][]string)
 	}
 
-	for _, rule := range m.mf.Rules {
-		target := rule.Target()
-		prereqs := m.dag[target] // handle additional dependencies
-
-	scan:
-		for _, pr := range rule.Prereqs() {
-			for _, known := range prereqs {
-				if known == pr {
-					continue scan // ignore duplicate dependencies
-				}
-			}
-
-			// make an node for the prereq target if it doesn't exist
-			m.dag[pr] = m.dag[pr]
-
-			// build: add edge (dependency)
-			prereqs = append(prereqs, pr)
+	seen := make(map[string]struct{})
+	queue := append([]string{}, m.goals...)
+	for {
+		if len(queue) == 0 {
+			break
 		}
+		origLen := len(queue)
+		for _, target := range queue {
+			if _, seen := seen[target]; seen {
+				continue
+			}
+			seen[target] = struct{}{}
 
-		// add or update node for dependent target
-		m.dag[target] = prereqs
+			rule := m.mf.Rule(target)
+			if rule == nil {
+				continue
+			}
+			m.dag[target] = rule.Prereqs()
+			for _, dep := range rule.Prereqs() {
+				// make a node for the prereq target even if it isn't defined
+				queue = append(queue, dep)
+				m.dag[dep] = m.dag[dep]
+			}
+		}
+		queue = queue[origLen:]
 	}
 
 	// topological sort on the DAG
@@ -102,13 +108,13 @@ func (m *Maker) buildDAG() {
 	}
 }
 
-func (m *Maker) TargetSets(goals []string) [][]string {
+func (m *Maker) TargetSets() [][]string {
 	return m.topo
 }
 
 // TODO!(sqs): use goals
-func (m *Maker) TargetSetsNeedingBuild(goals ...string) ([][]string, error) {
-	for _, goal := range goals {
+func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
+	for _, goal := range m.goals {
 		if rule := m.mf.Rule(goal); rule == nil {
 			return nil, errNoRuleToMakeTarget(goal)
 		}
@@ -126,6 +132,10 @@ func (m *Maker) TargetSetsNeedingBuild(goals ...string) ([][]string, error) {
 				return nil, err
 			}
 			if !exists {
+				rule := m.mf.Rule(target)
+				if rule == nil {
+					return nil, errNoRuleToMakeTarget(target)
+				}
 				targetsNeedingBuild = append(targetsNeedingBuild, target)
 			}
 		}
