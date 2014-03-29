@@ -26,8 +26,8 @@ Usage:
 
         makex [options] [target] ...
 
-If no targets are specified, the first target that appears in the makefile is
-used.
+If no targets are specified, the first target that appears in the makefile (not
+beginning with ".") is used.
 
 The options are:
 `)
