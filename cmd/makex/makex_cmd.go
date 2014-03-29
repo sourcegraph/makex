@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"runtime"
 	"strings"
@@ -15,6 +16,7 @@ var file = flag.String("f", "Makefile", "path to Makefile")
 var cwd = flag.String("C", "", "change to this directory before doing anything")
 var dryRun = flag.Bool("n", false, "dry run (don't actually run any commands)")
 var jobs = flag.Int("j", runtime.GOMAXPROCS(0), "number of jobs to run in parallel")
+var expand = flag.Bool("x", true, "expand globs in makefile prereqs")
 
 func main() {
 	flag.Usage = func() {
@@ -63,6 +65,13 @@ The options are:
 				goals = []string{target}
 				break
 			}
+		}
+	}
+
+	if *expand {
+		mf, err = conf.Expand(mf)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 

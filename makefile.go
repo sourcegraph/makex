@@ -3,6 +3,7 @@ package makex
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -40,6 +41,45 @@ type Rule interface {
 	Target() string
 	Prereqs() []string
 	Recipes() []string
+}
+
+// Expand returns a clone of mf with Prereqs filepath globs expanded. If rules
+// contain globs, they are replaced with BasicRules with the globs expanded.
+//
+// Only globs containing "*" are detected.
+//
+// TODO(sqs): make this use the c.FS.
+func (c *Config) Expand(orig *Makefile) (*Makefile, error) {
+	var mf Makefile
+	mf.Rules = make([]Rule, len(orig.Rules))
+	for i, rule := range orig.Rules {
+		var hasGlob bool
+		for _, target := range rule.Prereqs() {
+			if strings.Contains(target, "*") {
+				hasGlob = true
+				break
+			}
+		}
+		if hasGlob {
+			var expandedPrereqs []string
+			for _, target := range rule.Prereqs() {
+				files, err := filepath.Glob(target)
+				if err != nil {
+					return nil, err
+				}
+				expandedPrereqs = append(expandedPrereqs, files...)
+			}
+
+			mf.Rules[i] = &BasicRule{
+				TargetFile:  rule.Target(),
+				PrereqFiles: expandedPrereqs,
+				RecipeCmds:  rule.Recipes(),
+			}
+		} else {
+			mf.Rules[i] = rule
+		}
+	}
+	return &mf, nil
 }
 
 func Marshal(mf *Makefile) ([]byte, error) {
