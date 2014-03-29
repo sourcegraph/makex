@@ -19,9 +19,6 @@ func TestMarshal(t *testing.T) {
 				},
 			},
 			makefile: `
-.PHONY: all
-all: myTarget
-
 myTarget: myPrereq0 myPrereq1
 	foo bar
 `,

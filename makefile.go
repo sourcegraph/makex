@@ -117,24 +117,7 @@ func ExpandAutoVars(rule Rule, s string) string {
 }
 
 func Marshal(mf *Makefile) ([]byte, error) {
-	return marshal(mf, true)
-}
-
-func marshal(mf *Makefile, allRule bool) ([]byte, error) {
 	var b bytes.Buffer
-
-	if allRule {
-		var all []string
-		for _, rule := range mf.Rules {
-			ruleName := rule.Target()
-			all = append(all, ruleName)
-		}
-		if len(all) > 0 {
-			fmt.Fprintln(&b, ".PHONY: all")
-			fmt.Fprintf(&b, "all: %s\n", strings.Join(all, " "))
-		}
-		fmt.Fprintln(&b)
-	}
 
 	for i, rule := range mf.Rules {
 		if i != 0 {

@@ -81,7 +81,7 @@ x: a b
 }
 
 func marshalStr(t *testing.T, mf *Makefile) string {
-	data, err := marshal(mf, false)
+	data, err := Marshal(mf)
 	if err != nil {
 		t.Fatal(err)
 	}
