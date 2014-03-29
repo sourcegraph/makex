@@ -6,21 +6,22 @@ import (
 	"os/exec"
 )
 
-func ExternalMake(dir string, makefile []byte, args []string) error {
+// External runs makefile using the system `make` tool, optionally passing extra
+// args.
+func External(dir string, makefile []byte, args []string) ([]byte, error) {
 	tmpFile, err := ioutil.TempFile("", "sg-makefile")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer os.Remove(tmpFile.Name())
 
 	err = ioutil.WriteFile(tmpFile.Name(), makefile, 0600)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	args = append(args, "-f", tmpFile.Name(), "-C", dir)
+	args = append(args, "-f", tmpFile.Name())
 	mk := exec.Command("make", args...)
-	mk.Stdout = os.Stderr
-	mk.Stderr = os.Stderr
-	return mk.Run()
+	mk.Dir = dir
+	return mk.CombinedOutput()
 }
