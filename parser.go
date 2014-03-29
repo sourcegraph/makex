@@ -16,7 +16,15 @@ func Parse(data []byte) (*Makefile, error) {
 	var rule *BasicRule
 	for lineno, lineBytes := range lines {
 		line := string(lineBytes)
-		if strings.Contains(line, ":") {
+		if strings.HasPrefix(line, "\t") {
+			if rule == nil {
+				return nil, fmt.Errorf("line %d: indented recipe not inside a rule", lineno)
+			}
+			recipe := strings.TrimPrefix(line, "\t")
+			recipe = strings.Replace(recipe, "$@", Quote(rule.TargetFile), -1)
+			recipe = strings.Replace(recipe, "$^", strings.Join(QuoteList(rule.PrereqFiles), " "), -1)
+			rule.RecipeCmds = append(rule.RecipeCmds, recipe)
+		} else if strings.Contains(line, ":") {
 			sep := strings.Index(line, ":")
 			targets := strings.Fields(line[:sep])
 			if len(targets) > 1 {
@@ -26,14 +34,6 @@ func Parse(data []byte) (*Makefile, error) {
 			prereqs := strings.Fields(line[sep+1:])
 			rule = &BasicRule{TargetFile: target, PrereqFiles: prereqs}
 			mf.Rules = append(mf.Rules, rule)
-		} else if strings.HasPrefix(line, "\t") {
-			if rule == nil {
-				return nil, fmt.Errorf("line %d: indented recipe not inside a rule", lineno)
-			}
-			recipe := strings.TrimPrefix(line, "\t")
-			recipe = strings.Replace(recipe, "$@", Quote(rule.TargetFile), -1)
-			recipe = strings.Replace(recipe, "$^", strings.Join(QuoteList(rule.PrereqFiles), " "), -1)
-			rule.RecipeCmds = append(rule.RecipeCmds, recipe)
 		} else {
 			rule = nil
 		}
