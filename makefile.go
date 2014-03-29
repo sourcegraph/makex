@@ -43,20 +43,29 @@ type Rule interface {
 }
 
 func Marshal(mf *Makefile) ([]byte, error) {
+	return marshal(mf, true)
+}
+
+func marshal(mf *Makefile, allRule bool) ([]byte, error) {
 	var b bytes.Buffer
 
-	var all []string
-	for _, rule := range mf.Rules {
-		ruleName := rule.Target()
-		all = append(all, ruleName)
-	}
-	if len(all) > 0 {
-		fmt.Fprintln(&b, ".PHONY: all")
-		fmt.Fprintf(&b, "all: %s\n", strings.Join(all, " "))
+	if allRule {
+		var all []string
+		for _, rule := range mf.Rules {
+			ruleName := rule.Target()
+			all = append(all, ruleName)
+		}
+		if len(all) > 0 {
+			fmt.Fprintln(&b, ".PHONY: all")
+			fmt.Fprintf(&b, "all: %s\n", strings.Join(all, " "))
+		}
+		fmt.Fprintln(&b)
 	}
 
-	for _, rule := range mf.Rules {
-		fmt.Fprintln(&b)
+	for i, rule := range mf.Rules {
+		if i != 0 {
+			fmt.Fprintln(&b)
+		}
 
 		ruleName := rule.Target()
 		fmt.Fprintf(&b, "%s:", ruleName)
@@ -80,4 +89,12 @@ func Quote(s string) string {
 	}
 	q := strconv.Quote(s)
 	return "'" + strings.Replace(q[1:len(q)-1], "'", "", -1) + "'"
+}
+
+func QuoteList(ss []string) []string {
+	q := make([]string, len(ss))
+	for i, s := range ss {
+		q[i] = Quote(s)
+	}
+	return q
 }

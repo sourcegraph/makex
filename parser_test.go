@@ -2,6 +2,7 @@ package makex
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -49,6 +50,18 @@ x1:y1
 				&BasicRule{"x1", []string{"y1"}, []string{"c1"}},
 			}},
 		},
+		"recipe with $@ (target) var": {
+			data: `
+x:
+	echo $@`,
+			wantMakefile: &Makefile{Rules: []Rule{&BasicRule{"x", []string{}, []string{"echo x"}}}},
+		},
+		"recipe with $^ (prereqs) var": {
+			data: `
+x: a b
+	echo $^`,
+			wantMakefile: &Makefile{Rules: []Rule{&BasicRule{"x", []string{"a", "b"}, []string{"echo a b"}}}},
+		},
 	}
 	for label, test := range tests {
 		mf, err := Parse([]byte(test.data))
@@ -62,7 +75,15 @@ x1:y1
 			}
 		}
 		if !reflect.DeepEqual(mf, test.wantMakefile) {
-			t.Errorf("%s: bad parsed Makefile\n=========== got Makefile\n%+v\n\n=========== want Makefile\n%+v", label, mf, test.wantMakefile)
+			t.Errorf("%s: bad parsed Makefile\n=========== got Makefile\n%s\n\n=========== want Makefile\n%s", label, marshalStr(t, mf), marshalStr(t, test.wantMakefile))
 		}
 	}
+}
+
+func marshalStr(t *testing.T, mf *Makefile) string {
+	data, err := marshal(mf, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.TrimSpace(string(data))
 }

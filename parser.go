@@ -30,7 +30,10 @@ func Parse(data []byte) (*Makefile, error) {
 			if rule == nil {
 				return nil, fmt.Errorf("line %d: indented recipe not inside a rule", lineno)
 			}
-			rule.RecipeCmds = append(rule.RecipeCmds, strings.TrimPrefix(line, "\t"))
+			recipe := strings.TrimPrefix(line, "\t")
+			recipe = strings.Replace(recipe, "$@", Quote(rule.TargetFile), -1)
+			recipe = strings.Replace(recipe, "$^", strings.Join(QuoteList(rule.PrereqFiles), " "), -1)
+			rule.RecipeCmds = append(rule.RecipeCmds, recipe)
 		} else {
 			rule = nil
 		}
