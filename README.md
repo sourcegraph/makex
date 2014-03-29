@@ -25,23 +25,23 @@ Try running makex on the Makefiles in the `testdata/` directory.
 ```bash
 $ cat testdata/sample0/y
 cat: testdata/sample0/y: No such file or directory
-$ makex -C testdata -f testdata/Makefile.sample0
+$ makex -v -C testdata -f testdata/Makefile.sample0
 makex: [sample0/y] mkdir -p sample0
 makex: [sample0/y] echo hello bar > sample0/y
 $ cat testdata/sample0/y
 hello bar
-$ makex -C testdata -f testdata/Makefile.sample0
+$ makex -v -C testdata -f testdata/Makefile.sample0
 $
 ```
 
 ```bash
 $ ls testdata/sample1/
 y1
-$ makex -C testdata -f testdata/Makefile.sample1
+$ makex -v -C testdata -f testdata/Makefile.sample1
 makex: [sample1/y0] echo hello bar > sample1/y0
 $ ls testdata/sample1/
 y0  y1
-$ makex -C testdata -f testdata/Makefile.sample1
+$ makex -v -C testdata -f testdata/Makefile.sample1
 $
 ```
 
