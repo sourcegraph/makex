@@ -96,6 +96,14 @@ func globPrefix(path string) string {
 	return filepath.Join(prefix...)
 }
 
+// ExpandAutoVars expands the automatic variables $@ (the current target path)
+// and $^ (the space-separated list of prereqs) in s.
+func ExpandAutoVars(rule Rule, s string) string {
+	s = strings.Replace(s, "$@", Quote(rule.Target()), -1)
+	s = strings.Replace(s, "$^", strings.Join(QuoteList(rule.Prereqs()), " "), -1)
+	return s
+}
+
 func Marshal(mf *Makefile) ([]byte, error) {
 	return marshal(mf, true)
 }

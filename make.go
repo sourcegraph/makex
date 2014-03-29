@@ -184,6 +184,7 @@ func (m *Maker) Run() error {
 			rule := m.mf.Rule(target)
 			par.Do(func() error {
 				for _, recipe := range rule.Recipes() {
+					recipe = ExpandAutoVars(rule, recipe)
 					if m.Verbose {
 						m.Log.Printf("[%s] %s", rule.Target(), recipe)
 					}
