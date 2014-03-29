@@ -5,16 +5,6 @@ import (
 	"testing"
 )
 
-type dummyRule struct {
-	target  string
-	prereqs []string
-	recipes []string
-}
-
-func (r dummyRule) Target() string    { return r.target }
-func (r dummyRule) Prereqs() []string { return r.prereqs }
-func (r dummyRule) Recipes() []string { return r.recipes }
-
 func TestMarshal(t *testing.T) {
 	tests := []struct {
 		rules    []Rule
@@ -22,7 +12,7 @@ func TestMarshal(t *testing.T) {
 	}{
 		{
 			rules: []Rule{
-				dummyRule{
+				&BasicRule{
 					"myTarget",
 					[]string{"myPrereq0", "myPrereq1"},
 					[]string{"foo bar"},

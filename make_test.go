@@ -25,21 +25,21 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			wantErr: errNoRuleToMakeTarget("x"),
 		},
 		"don't build target that already exists": {
-			mf:    &Makefile{Rules: []Rule{dummyRule{target: "x"}}},
+			mf:    &Makefile{Rules: []Rule{&BasicRule{TargetFile: "x"}}},
 			fs:    NewFileSystem(rwvfs.Map(map[string]string{"x": ""})),
 			goals: []string{"x"},
 			wantTargetSetsNeedingBuild: [][]string{},
 		},
 		"build target that doesn't exist": {
-			mf:    &Makefile{Rules: []Rule{dummyRule{target: "x"}}},
+			mf:    &Makefile{Rules: []Rule{&BasicRule{TargetFile: "x"}}},
 			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals: []string{"x"},
 			wantTargetSetsNeedingBuild: [][]string{{"x"}},
 		},
 		"build targets recursively that don't exist": {
 			mf: &Makefile{Rules: []Rule{
-				dummyRule{target: "x0", prereqs: []string{"x1"}},
-				dummyRule{target: "x1"},
+				&BasicRule{TargetFile: "x0", PrereqFiles: []string{"x1"}},
+				&BasicRule{TargetFile: "x1"},
 			}},
 			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals: []string{"x0"},
@@ -47,7 +47,7 @@ func TestTargetsNeedingBuild(t *testing.T) {
 		},
 		"don't build goal targets more than once": {
 			mf: &Makefile{Rules: []Rule{
-				dummyRule{target: "x0"},
+				&BasicRule{TargetFile: "x0"},
 			}},
 			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals: []string{"x0", "x0"},
@@ -55,9 +55,9 @@ func TestTargetsNeedingBuild(t *testing.T) {
 		},
 		"don't build any targets more than once": {
 			mf: &Makefile{Rules: []Rule{
-				dummyRule{target: "x0", prereqs: []string{"y"}},
-				dummyRule{target: "x1", prereqs: []string{"y"}},
-				dummyRule{target: "y"},
+				&BasicRule{TargetFile: "x0", PrereqFiles: []string{"y"}},
+				&BasicRule{TargetFile: "x1", PrereqFiles: []string{"y"}},
+				&BasicRule{TargetFile: "y"},
 			}},
 			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals: []string{"x0", "x1"},
@@ -65,7 +65,7 @@ func TestTargetsNeedingBuild(t *testing.T) {
 		},
 		"detect 1-cycles": {
 			mf: &Makefile{Rules: []Rule{
-				dummyRule{target: "x0", prereqs: []string{"x0"}},
+				&BasicRule{TargetFile: "x0", PrereqFiles: []string{"x0"}},
 			}},
 			fs:      NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals:   []string{"x0"},
@@ -73,8 +73,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 		},
 		"detect 2-cycles": {
 			mf: &Makefile{Rules: []Rule{
-				dummyRule{target: "x0", prereqs: []string{"x1"}},
-				dummyRule{target: "x1", prereqs: []string{"x0"}},
+				&BasicRule{TargetFile: "x0", PrereqFiles: []string{"x1"}},
+				&BasicRule{TargetFile: "x1", PrereqFiles: []string{"x0"}},
 			}},
 			fs:      NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals:   []string{"x0"},

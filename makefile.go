@@ -12,6 +12,16 @@ type Makefile struct {
 	Rules []Rule
 }
 
+type BasicRule struct {
+	TargetFile  string
+	PrereqFiles []string
+	RecipeCmds  []string
+}
+
+func (r *BasicRule) Target() string    { return r.TargetFile }
+func (r *BasicRule) Prereqs() []string { return r.PrereqFiles }
+func (r *BasicRule) Recipes() []string { return r.RecipeCmds }
+
 // Rule returns the rule to make the specified target if it exists, or nil
 // otherwise.
 //
