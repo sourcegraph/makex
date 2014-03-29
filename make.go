@@ -183,8 +183,7 @@ func (m *Maker) Run() error {
 					if err != nil {
 						// remove files if failed
 						if exists, _ := m.pathExists(rule.Target()); exists {
-							// TODO!(sqs): use VFS, not os
-							err2 := os.Remove(rule.Target())
+							err2 := m.FS.Remove(rule.Target())
 							if err2 != nil {
 								m.Log.Printf("[%s] failed removing target after error: %s", rule.Target(), err)
 							}
