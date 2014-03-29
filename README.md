@@ -34,7 +34,7 @@ $ makex -C testdata -f testdata/Makefile.sample0
 $
 ```
 
-```
+```bash
 $ ls testdata/sample1/
 y1
 $ makex -C testdata -f testdata/Makefile.sample1
@@ -43,7 +43,7 @@ $ ls testdata/sample1/
 y0  y1
 $ makex -C testdata -f testdata/Makefile.sample1
 $
-`
+```
 
 ## Known issues
 
