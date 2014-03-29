@@ -3,6 +3,7 @@ package makex
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -62,7 +63,7 @@ func (c *Config) Expand(orig *Makefile) (*Makefile, error) {
 		if hasGlob {
 			var expandedPrereqs []string
 			for _, target := range rule.Prereqs() {
-				files, err := rwvfs.Glob(walkableRWVFS{c.fs()}, "", target)
+				files, err := rwvfs.Glob(walkableRWVFS{c.fs()}, globPrefix(target), target)
 				if err != nil {
 					return nil, err
 				}
@@ -79,6 +80,20 @@ func (c *Config) Expand(orig *Makefile) (*Makefile, error) {
 		}
 	}
 	return &mf, nil
+}
+
+// globPrefix returns all path components up to (not including) the first path
+// component that contains a "*".
+func globPrefix(path string) string {
+	cs := strings.Split(path, string(filepath.Separator))
+	var prefix []string
+	for _, c := range cs {
+		if strings.Contains(c, "*") {
+			break
+		}
+		prefix = append(prefix, c)
+	}
+	return filepath.Join(prefix...)
 }
 
 func Marshal(mf *Makefile) ([]byte, error) {
