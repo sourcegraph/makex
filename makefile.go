@@ -45,6 +45,18 @@ type Rule interface {
 	Recipes() []string
 }
 
+// DefaultRule is the first rule whose name does not begin with a ".", or nil if
+// no such rule exists.
+func (mf *Makefile) DefaultRule() Rule {
+	for _, rule := range mf.Rules {
+		target := rule.Target()
+		if !strings.HasPrefix(target, ".") {
+			return rule
+		}
+	}
+	return nil
+}
+
 // Expand returns a clone of mf with Prereqs filepath globs expanded. If rules
 // contain globs, they are replaced with BasicRules with the globs expanded.
 //

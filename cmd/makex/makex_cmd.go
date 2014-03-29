@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/sourcegraph/makex"
 )
@@ -56,12 +55,8 @@ The options are:
 	goals := flag.Args()
 	if len(goals) == 0 {
 		// Find the first rule that doesn't begin with a ".".
-		for _, rule := range mf.Rules {
-			target := rule.Target()
-			if !strings.HasPrefix(target, ".") {
-				goals = []string{target}
-				break
-			}
+		if defaultRule := mf.DefaultRule(); defaultRule != nil {
+			goals = []string{defaultRule.Target()}
 		}
 	}
 
