@@ -160,6 +160,9 @@ func (m *Maker) DryRun(w io.Writer) error {
 	if err != nil {
 		return err
 	}
+	if len(targetSets) == 0 {
+		fmt.Fprintln(w, "No target sets need building.")
+	}
 	for i, targetSet := range targetSets {
 		if i != 0 {
 			fmt.Fprintln(w)
