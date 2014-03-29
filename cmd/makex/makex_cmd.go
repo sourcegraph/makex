@@ -87,8 +87,14 @@ The options are:
 	}
 
 	if *dryRun {
-		for _, targetSet := range targetSets {
-			fmt.Println(targetSet)
+		for i, targetSet := range targetSets {
+			if i != 0 {
+				fmt.Println()
+			}
+			fmt.Printf("========= TARGET SET %d (%d targets)\n", i, len(targetSet))
+			for _, target := range targetSet {
+				fmt.Println(" - ", target)
+			}
 		}
 		return
 	}
