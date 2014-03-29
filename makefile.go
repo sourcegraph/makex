@@ -12,6 +12,20 @@ type Makefile struct {
 	Rules []Rule
 }
 
+// Rule returns the rule to make the specified target if it exists, or nil
+// otherwise.
+//
+// TODO(sqs): support multiple rules for one target
+// (http://www.gnu.org/software/make/manual/html_node/Multiple-Rules.html).
+func (mf *Makefile) Rule(target string) Rule {
+	for _, rule := range mf.Rules {
+		if rule.Target() == target {
+			return rule
+		}
+	}
+	return nil
+}
+
 type Rule interface {
 	Target() string
 	Prereqs() []string
