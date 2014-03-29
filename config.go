@@ -1,8 +1,10 @@
 package makex
 
 import (
+	"flag"
 	"log"
 	"os"
+	"runtime"
 
 	"github.com/sourcegraph/rwvfs"
 )
@@ -12,6 +14,7 @@ type Config struct {
 	ParallelJobs int
 	Log          *log.Logger
 	Verbose      bool
+	DryRun       bool
 }
 
 var Default = Config{
@@ -38,4 +41,15 @@ func (c *Config) pathExists(path string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// Flags adds makex command-line flags to an existing flag.FlagSet (or the
+// global FlagSet if fs is nil).
+func Flags(fs *flag.FlagSet, conf *Config, prefix string) {
+	if fs == nil {
+		fs = flag.CommandLine
+	}
+	fs.BoolVar(&conf.DryRun, prefix+"n", false, "dry run (don't actually run any commands)")
+	fs.IntVar(&conf.ParallelJobs, prefix+"j", runtime.GOMAXPROCS(0), "number of jobs to run in parallel")
+	fs.BoolVar(&conf.Verbose, prefix+"v", false, "verbose")
 }

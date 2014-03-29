@@ -12,6 +12,8 @@ import (
 )
 
 var expand = flag.Bool("x", true, "expand globs in makefile prereqs")
+var cwd = flag.String("C", "", "change to this directory before doing anything")
+var file = flag.String("f", "Makefile", "path to Makefile")
 
 func main() {
 	flag.Usage = func() {
@@ -30,18 +32,17 @@ The options are:
 		os.Exit(1)
 	}
 
-	fd := makex.Flags(nil, "")
-	flag.Parse()
 	conf := makex.Default
-	fd.SetConfig(&conf)
+	makex.Flags(nil, &conf, "")
+	flag.Parse()
 
-	data, err := ioutil.ReadFile(fd.Makefile)
+	data, err := ioutil.ReadFile(*file)
 	if err != nil {
 		conf.Log.Fatal(err)
 	}
 
-	if fd.Dir != "" {
-		err := os.Chdir(fd.Dir)
+	if *cwd != "" {
+		err := os.Chdir(*cwd)
 		if err != nil {
 			conf.Log.Fatal(err)
 		}
@@ -82,7 +83,7 @@ The options are:
 		fmt.Println("Nothing to do.")
 	}
 
-	if fd.DryRun {
+	if conf.DryRun {
 		for i, targetSet := range targetSets {
 			if i != 0 {
 				fmt.Println()
