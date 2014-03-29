@@ -1,16 +1,22 @@
 package makex
 
 import (
+	"log"
 	"os"
 
 	"github.com/sourcegraph/rwvfs"
 )
 
 type Config struct {
-	FS FileSystem
+	FS           FileSystem
+	ParallelJobs int
+	Log          *log.Logger
 }
 
-var Default Config
+var Default = Config{
+	ParallelJobs: 1,
+	Log:          log.New(os.Stderr, "makex: ", 0),
+}
 
 func (c *Config) fs() FileSystem {
 	if c.FS != nil {

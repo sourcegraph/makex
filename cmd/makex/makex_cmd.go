@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
+	"runtime"
 
 	"github.com/sourcegraph/makex"
 )
@@ -13,10 +13,9 @@ import (
 var file = flag.String("f", "Makefile", "path to Makefile")
 var cwd = flag.String("C", "", "change to this directory before doing anything")
 var dryRun = flag.Bool("n", false, "dry run (don't actually run any commands)")
+var jobs = flag.Int("j", runtime.GOMAXPROCS(0), "number of jobs to run in parallel")
 
 func main() {
-	log := log.New(os.Stderr, "makex: ", 0)
-
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, `makex is an experimental, incomplete implementation of make in Go.
 
@@ -34,22 +33,24 @@ The options are:
 	}
 
 	flag.Parse()
+	conf := makex.Default
+	conf.ParallelJobs = *jobs
+
+	data, err := ioutil.ReadFile(*file)
+	if err != nil {
+		conf.Log.Fatal(err)
+	}
 
 	if *cwd != "" {
 		err := os.Chdir(*cwd)
 		if err != nil {
-			log.Fatal(err)
+			conf.Log.Fatal(err)
 		}
-	}
-
-	data, err := ioutil.ReadFile(*file)
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	mf, err := makex.Parse(data)
 	if err != nil {
-		log.Fatal(err)
+		conf.Log.Fatal(err)
 	}
 
 	goals := flag.Args()
@@ -57,17 +58,26 @@ The options are:
 		goals = []string{mf.Rules[0].Target()}
 	}
 
-	conf := makex.Default
 	mk := conf.NewMaker(mf, goals...)
+
 	targetSets, err := mk.TargetSetsNeedingBuild()
 	if err != nil {
-		log.Fatal(err)
+		conf.Log.Fatal(err)
 	}
 
 	if len(targetSets) == 0 {
 		fmt.Println("Nothing to do.")
 	}
-	for _, targetSet := range targetSets {
-		fmt.Println(targetSet)
+
+	if *dryRun {
+		for _, targetSet := range targetSets {
+			fmt.Println(targetSet)
+		}
+		return
+	}
+
+	err = mk.Run()
+	if err != nil {
+		conf.Log.Fatal(err)
 	}
 }

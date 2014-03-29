@@ -1,6 +1,12 @@
 package makex
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"os/exec"
+
+	"code.google.com/p/rog-go/parallel"
+)
 
 // TargetsNeedingBuild returns an ordered list of target sets
 func (c *Config) NewMaker(mf *Makefile, goals ...string) *Maker {
@@ -143,6 +149,39 @@ func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 		}
 	}
 	return targetSets, nil
+}
+
+func (m *Maker) Run() error {
+	targetSets, err := m.TargetSetsNeedingBuild()
+	if err != nil {
+		return err
+	}
+
+	for _, targetSet := range targetSets {
+		par := parallel.NewRun(m.ParallelJobs)
+		for _, target := range targetSet {
+			rule := m.mf.Rule(target)
+			par.Do(func() error {
+				for _, recipe := range rule.Recipes() {
+					m.Log.Printf("[%s] %s", rule.Target(), recipe)
+					cmd := exec.Command("sh", "-c", recipe)
+					cmd.Stdout = os.Stderr
+					cmd.Stderr = os.Stderr
+					err := cmd.Run()
+					if err != nil {
+						return fmt.Errorf("[%s] command %q failed: %s", rule.Target(), recipe, err)
+					}
+				}
+				return nil
+			})
+		}
+		err := par.Wait()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func errNoRuleToMakeTarget(target string) error {
