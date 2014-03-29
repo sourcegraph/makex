@@ -22,3 +22,13 @@ func (c *Config) fs() FileSystem {
 	}
 	return NewFileSystem(rwvfs.OS(dir))
 }
+
+func (c *Config) pathExists(path string) (bool, error) {
+	_, err := c.fs().Stat(path)
+	if os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	return true, nil
+}

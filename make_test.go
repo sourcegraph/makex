@@ -9,15 +9,15 @@ import (
 
 func TestTargetsNeedingBuild(t *testing.T) {
 	tests := map[string]struct {
-		mf             *Makefile
-		fs             FileSystem
-		goals          []string
-		wantErr        error
-		wantRulesToRun []string
+		mf                         *Makefile
+		fs                         FileSystem
+		goals                      []string
+		wantErr                    error
+		wantTargetSetsNeedingBuild [][]string
 	}{
 		"do nothing if empty": {
-			mf:             &Makefile{},
-			wantRulesToRun: []string{},
+			mf: &Makefile{},
+			wantTargetSetsNeedingBuild: [][]string{},
 		},
 		"return error if target isn't defined in Makefile": {
 			mf:      &Makefile{},
@@ -25,33 +25,33 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			wantErr: errNoRuleToMakeTarget("x"),
 		},
 		"don't build target that already exists": {
-			mf:             &Makefile{Rules: []Rule{dummyRule{target: "x"}}},
-			fs:             NewFileSystem(rwvfs.Map(map[string]string{"x": ""})),
-			goals:          []string{"x"},
-			wantRulesToRun: []string{},
+			mf:    &Makefile{Rules: []Rule{dummyRule{target: "x"}}},
+			fs:    NewFileSystem(rwvfs.Map(map[string]string{"x": ""})),
+			goals: []string{"x"},
+			wantTargetSetsNeedingBuild: [][]string{},
 		},
 		"build target that doesn't exist": {
-			mf:             &Makefile{Rules: []Rule{dummyRule{target: "x"}}},
-			fs:             NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals:          []string{"x"},
-			wantRulesToRun: []string{"x"},
+			mf:    &Makefile{Rules: []Rule{dummyRule{target: "x"}}},
+			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals: []string{"x"},
+			wantTargetSetsNeedingBuild: [][]string{{"x"}},
 		},
 		"build targets recursively that don't exist": {
 			mf: &Makefile{Rules: []Rule{
 				dummyRule{target: "x0", prereqs: []string{"x1"}},
 				dummyRule{target: "x1"},
 			}},
-			fs:             NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals:          []string{"x0"},
-			wantRulesToRun: []string{"x1", "x0"},
+			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals: []string{"x0"},
+			wantTargetSetsNeedingBuild: [][]string{{"x1"}, {"x0"}},
 		},
 		"don't build goal targets more than once": {
 			mf: &Makefile{Rules: []Rule{
 				dummyRule{target: "x0"},
 			}},
-			fs:             NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals:          []string{"x0", "x0"},
-			wantRulesToRun: []string{"x0"},
+			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals: []string{"x0", "x0"},
+			wantTargetSetsNeedingBuild: [][]string{{"x0"}},
 		},
 		"don't build any targets more than once": {
 			mf: &Makefile{Rules: []Rule{
@@ -59,9 +59,9 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				dummyRule{target: "x1", prereqs: []string{"y"}},
 				dummyRule{target: "y"},
 			}},
-			fs:             NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals:          []string{"x0", "x1"},
-			wantRulesToRun: []string{"y", "x0", "x1"},
+			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals: []string{"x0", "x1"},
+			wantTargetSetsNeedingBuild: [][]string{{"y"}, {"x0", "x1"}},
 		},
 		"detect 1-cycles": {
 			mf: &Makefile{Rules: []Rule{
@@ -69,7 +69,7 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			}},
 			fs:      NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals:   []string{"x0"},
-			wantErr: errCircularDependency("x0"),
+			wantErr: errCircularDependency("x0", []string{"x0"}),
 		},
 		"detect 2-cycles": {
 			mf: &Makefile{Rules: []Rule{
@@ -78,13 +78,14 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			}},
 			fs:      NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals:   []string{"x0"},
-			wantErr: errCircularDependency("x0", "x1"),
+			wantErr: errCircularDependency("x0", []string{"x1"}),
 		},
 	}
 
 	for label, test := range tests {
 		conf := &Config{FS: test.fs}
-		rulesToRun, err := conf.TargetsNeedingBuild(test.mf, test.goals...)
+		mk := conf.NewMaker(test.mf)
+		targetSets, err := mk.TargetSetsNeedingBuild(test.goals...)
 		if !reflect.DeepEqual(err, test.wantErr) {
 			if test.wantErr == nil {
 				t.Errorf("%s: TargetsNeedingBuild(%q): error: %s", label, test.goals, err)
@@ -94,8 +95,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				continue
 			}
 		}
-		if !reflect.DeepEqual(rulesToRun, test.wantRulesToRun) {
-			t.Errorf("%s: got rulesToRun %v, want %v", label, rulesToRun, test.wantRulesToRun)
+		if !reflect.DeepEqual(targetSets, test.wantTargetSetsNeedingBuild) {
+			t.Errorf("%s: got targetSets needing build %v, want %v", label, targetSets, test.wantTargetSetsNeedingBuild)
 		}
 	}
 }
