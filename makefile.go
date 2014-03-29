@@ -17,17 +17,6 @@ type Rule interface {
 	Recipes() []string
 }
 
-type Phonier interface {
-	Phony() bool
-}
-
-func isPhony(r Rule) bool {
-	if p, ok := r.(Phonier); ok {
-		return p.Phony()
-	}
-	return false
-}
-
 func Makefile(rules []Rule, header []string) ([]byte, error) {
 	var mf bytes.Buffer
 
@@ -38,20 +27,13 @@ func Makefile(rules []Rule, header []string) ([]byte, error) {
 		fmt.Fprintln(&mf)
 	}
 
-	var all, phonies []string
-
+	var all []string
 	for _, rule := range rules {
 		ruleName := rule.Target()
 		all = append(all, ruleName)
-		if isPhony(rule) {
-			phonies = append(phonies, ruleName)
-		}
 	}
 	if len(all) > 0 {
 		fmt.Fprintf(&mf, "all: %s\n", strings.Join(all, " "))
-	}
-	if len(phonies) > 0 {
-		fmt.Fprintf(&mf, "\n.PHONY: all %s\n", strings.Join(phonies, " "))
 	}
 
 	for _, rule := range rules {
