@@ -1,7 +1,9 @@
 package makex
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 
@@ -163,12 +165,38 @@ func (m *Maker) Run() error {
 			rule := m.mf.Rule(target)
 			par.Do(func() error {
 				for _, recipe := range rule.Recipes() {
-					m.Log.Printf("[%s] %s", rule.Target(), recipe)
+					if m.Verbose {
+						m.Log.Printf("[%s] %s", rule.Target(), recipe)
+					}
 					cmd := exec.Command("sh", "-c", recipe)
-					cmd.Stdout = os.Stderr
-					cmd.Stderr = os.Stderr
+
+					var buf bytes.Buffer
+					var out io.Writer
+					if m.Verbose {
+						out = io.MultiWriter(os.Stderr)
+					} else {
+						out = &buf
+					}
+
+					cmd.Stdout, cmd.Stderr = out, out
 					err := cmd.Run()
 					if err != nil {
+						// remove files if failed
+						if exists, _ := m.pathExists(rule.Target()); exists {
+							// TODO!(sqs): use VFS, not os
+							err2 := os.Remove(rule.Target())
+							if err2 != nil {
+								m.Log.Printf("[%s] failed removing target after error: %s", rule.Target(), err)
+							}
+						}
+
+						m.Log.Printf(`command failed:
+============================================================
+FAIL: %s
+------------------------------------------------------------
+%s
+============================================================
+`, recipe, buf.String())
 						return fmt.Errorf("[%s] command %q failed: %s", rule.Target(), recipe, err)
 					}
 				}
@@ -177,7 +205,7 @@ func (m *Maker) Run() error {
 		}
 		err := par.Wait()
 		if err != nil {
-			return err
+			return Errors(err.(parallel.Errors))
 		}
 	}
 

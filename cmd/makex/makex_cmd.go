@@ -17,6 +17,7 @@ var cwd = flag.String("C", "", "change to this directory before doing anything")
 var dryRun = flag.Bool("n", false, "dry run (don't actually run any commands)")
 var jobs = flag.Int("j", runtime.GOMAXPROCS(0), "number of jobs to run in parallel")
 var expand = flag.Bool("x", true, "expand globs in makefile prereqs")
+var v = flag.Bool("v", false, "verbose")
 
 func main() {
 	flag.Usage = func() {
@@ -38,6 +39,7 @@ The options are:
 	flag.Parse()
 	conf := makex.Default
 	conf.ParallelJobs = *jobs
+	conf.Verbose = *v
 
 	data, err := ioutil.ReadFile(*file)
 	if err != nil {

@@ -11,6 +11,7 @@ type Config struct {
 	FS           FileSystem
 	ParallelJobs int
 	Log          *log.Logger
+	Verbose      bool
 }
 
 var Default = Config{
