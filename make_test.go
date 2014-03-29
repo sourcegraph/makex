@@ -45,6 +45,41 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			goals:          []string{"x0"},
 			wantRulesToRun: []string{"x1", "x0"},
 		},
+		"don't build goal targets more than once": {
+			mf: &Makefile{Rules: []Rule{
+				dummyRule{target: "x0"},
+			}},
+			fs:             NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:          []string{"x0", "x0"},
+			wantRulesToRun: []string{"x0"},
+		},
+		"don't build any targets more than once": {
+			mf: &Makefile{Rules: []Rule{
+				dummyRule{target: "x0", prereqs: []string{"y"}},
+				dummyRule{target: "x1", prereqs: []string{"y"}},
+				dummyRule{target: "y"},
+			}},
+			fs:             NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:          []string{"x0", "x1"},
+			wantRulesToRun: []string{"y", "x0", "x1"},
+		},
+		"detect 1-cycles": {
+			mf: &Makefile{Rules: []Rule{
+				dummyRule{target: "x0", prereqs: []string{"x0"}},
+			}},
+			fs:      NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:   []string{"x0"},
+			wantErr: errCircularDependency("x0"),
+		},
+		"detect 2-cycles": {
+			mf: &Makefile{Rules: []Rule{
+				dummyRule{target: "x0", prereqs: []string{"x1"}},
+				dummyRule{target: "x1", prereqs: []string{"x0"}},
+			}},
+			fs:      NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:   []string{"x0"},
+			wantErr: errCircularDependency("x0", "x1"),
+		},
 	}
 
 	for label, test := range tests {
