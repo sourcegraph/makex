@@ -57,7 +57,7 @@ func (m *Maker) buildDAG() {
 			if rule == nil {
 				continue
 			}
-			m.dag[target] = rule.Prereqs()
+			m.dag[target] = append([]string{}, rule.Prereqs()...)
 			for _, dep := range rule.Prereqs() {
 				// make a node for the prereq target even if it isn't defined
 				queue = append(queue, dep)
