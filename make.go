@@ -134,7 +134,7 @@ func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 	for _, targetSet := range m.topo {
 		var targetsNeedingBuild []string
 		for _, target := range targetSet {
-			exists, err := m.pathExists(target)
+			exists, err := target.Exists(m.Config)
 			if err != nil {
 				return nil, err
 			}
