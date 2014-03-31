@@ -65,33 +65,39 @@ func (c *Config) Expand(orig *Makefile) (*Makefile, error) {
 	var mf Makefile
 	mf.Rules = make([]Rule, len(orig.Rules))
 	for i, rule := range orig.Rules {
-		var hasGlob bool
-		for _, target := range rule.Prereqs() {
-			if strings.Contains(target, "*") {
-				hasGlob = true
-				break
-			}
+		expandedPrereqs, err := c.globs(rule.Prereqs())
+		if err != nil {
+			return nil, err
 		}
-		if hasGlob {
-			var expandedPrereqs []string
-			for _, target := range rule.Prereqs() {
-				files, err := rwvfs.Glob(walkableRWVFS{c.fs()}, globPrefix(target), target)
-				if err != nil {
-					return nil, err
-				}
-				expandedPrereqs = append(expandedPrereqs, files...)
-			}
+		mf.Rules[i] = &BasicRule{
+			TargetFile:  rule.Target(),
+			PrereqFiles: expandedPrereqs,
+			RecipeCmds:  rule.Recipes(),
+		}
 
-			mf.Rules[i] = &BasicRule{
-				TargetFile:  rule.Target(),
-				PrereqFiles: expandedPrereqs,
-				RecipeCmds:  rule.Recipes(),
-			}
-		} else {
-			mf.Rules[i] = rule
-		}
 	}
 	return &mf, nil
+}
+
+// globs returns all files in the filesystem that match any of the glob patterns
+// (using path/filepath.Match glob syntax). The
+func (c *Config) globs(patterns []string) (matches []string, err error) {
+	for _, pattern := range patterns {
+		if strings.ContainsAny(pattern, "*?[]") {
+			files, err := c.glob(pattern)
+			if err != nil {
+				return nil, err
+			}
+			matches = append(matches, files...)
+		}
+	}
+	return
+}
+
+// glob returns all files in the filesystem that match the glob pattern (using
+// path/filepath.Match glob syntax).
+func (c *Config) glob(pattern string) (matches []string, err error) {
+	return rwvfs.Glob(walkableRWVFS{c.fs()}, globPrefix(pattern), pattern)
 }
 
 // globPrefix returns all path components up to (not including) the first path
