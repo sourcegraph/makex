@@ -161,3 +161,12 @@ func QuoteList(ss []string) []string {
 	}
 	return q
 }
+
+// Targets returns the list of targets defined by rules.
+func Targets(rules []Rule) []string {
+	targets := make([]string, len(rules))
+	for i, rule := range rules {
+		targets[i] = rule.Target()
+	}
+	return targets
+}
