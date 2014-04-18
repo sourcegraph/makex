@@ -1,6 +1,6 @@
 # makex
 
-**makex** is an experimental, incompatible `make` implementation written in Go.
+**makex** is a `make` clone for Go that makes it easier to write build tools in Go. It lets you define tasks and dependencies in the familiar Makefile format, and unlike just shelling out to `make`, it gives you programmatic access (in Go) to the progress and console output of your tasks. We use makex at [Sourcegraph](https://sourcegraph.com) to compile and analyze hundreds of thousands of your open-source projects.
 
 Documentation: [makex on Sourcegraph](https://sourcegraph.com/github.com/sourcegraph/makex)
 
