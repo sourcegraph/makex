@@ -50,6 +50,6 @@ $
 makex is very incomplete.
 
 * No support for setting or expanding variables (except for special-cased support for `$@` and `$^`)
-* No support for filesystem globs except in the OS filesystem (not in VFSfilesystems).
+* No support for filesystem globs except in the OS filesystem (not in VFS filesystems).
 * Many other issues.
 
