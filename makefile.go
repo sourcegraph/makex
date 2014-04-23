@@ -11,18 +11,30 @@ import (
 	"github.com/sourcegraph/rwvfs"
 )
 
+// Makefile represents a set of rules, each describing how to build a target.
 type Makefile struct {
 	Rules []Rule
 }
 
+// BasicRule implements Rule.
+//
+// Use BasicRule for rules that you don't need to introspect
+// programmatically. If you need to store additional metadata about
+// rules, create a separate type that implements Rule and holds the
+// metadata.
 type BasicRule struct {
 	TargetFile  string
 	PrereqFiles []string
 	RecipeCmds  []string
 }
 
-func (r *BasicRule) Target() string    { return r.TargetFile }
+// Target implements Rule.
+func (r *BasicRule) Target() string { return r.TargetFile }
+
+// Prereqs implements Rule.
 func (r *BasicRule) Prereqs() []string { return r.PrereqFiles }
+
+// Recipes implements rule.
 func (r *BasicRule) Recipes() []string { return r.RecipeCmds }
 
 // Rule returns the rule to make the specified target if it exists, or nil
@@ -39,6 +51,13 @@ func (mf *Makefile) Rule(target string) Rule {
 	return nil
 }
 
+// A Rule describes a target file, a list of commands (recipes) used
+// to create the target output file, and the files (which may also
+// have corresponding rules) that must exist prior to running the
+// recipes.
+//
+// It is a slightly simplified representation of a standard "make"
+// rule.
 type Rule interface {
 	Target() string
 	Prereqs() []string
@@ -122,6 +141,14 @@ func ExpandAutoVars(rule Rule, s string) string {
 	return s
 }
 
+// Marshal returns the textual representation of the Makefile, in the
+// usual format:
+//
+//   target: prereqs
+//   	recipes
+//
+//   ...
+//
 func Marshal(mf *Makefile) ([]byte, error) {
 	var b bytes.Buffer
 
@@ -146,6 +173,12 @@ func Marshal(mf *Makefile) ([]byte, error) {
 
 var cleanRE = regexp.MustCompile(`^[\w\d_/.-]+$`)
 
+// Quote IS NOT A SAFE WAY TO ESCAPE USER INPUT. It hackily escapes
+// special characters in s and surrounds it with quotation marks if
+// needed, so that the shell interprets it as a single argument equal
+// to s. DON'T RELY ON THIS FOR SECURITY.
+//
+// TODO(sqs): come up with a safe way of escaping user input
 func Quote(s string) string {
 	if cleanRE.MatchString(s) {
 		return s
@@ -154,6 +187,11 @@ func Quote(s string) string {
 	return "'" + strings.Replace(q[1:len(q)-1], "'", "", -1) + "'"
 }
 
+// QuoteList IS NOT A SAFE WAY TO ESCAPE USER INPUT. It returns a list
+// whose elements are the escaped elements of ss (using Quote). DON'T
+// RELY ON THIS FOR SECURITY.
+//
+// TODO(sqs): come up with a safe way of escaping user input
 func QuoteList(ss []string) []string {
 	q := make([]string, len(ss))
 	for i, s := range ss {
