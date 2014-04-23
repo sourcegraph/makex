@@ -10,6 +10,18 @@ import (
 	"github.com/sourcegraph/rwvfs"
 )
 
+func TestMaker_DryRun(t *testing.T) {
+	var conf Config
+	mf := &Makefile{
+		Rules: []Rule{&BasicRule{TargetFile: "x"}},
+	}
+	mk := conf.NewMaker(mf, "x")
+	err := mk.DryRun(ioutil.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestMaker_Run(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "makex")
 	if err != nil {
