@@ -1,11 +1,59 @@
 package makex
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/sourcegraph/rwvfs"
 )
+
+func TestMaker_Run(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "makex")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	conf := &Config{
+		ParallelJobs: 1,
+		FS:           NewFileSystem(rwvfs.OS(tmpDir)),
+	}
+
+	target := "x"
+	mf := &Makefile{
+		Rules: []Rule{
+			&BasicRule{
+				TargetFile: target,
+				RecipeCmds: []string{"touch " + filepath.Join(tmpDir, target)},
+			},
+		},
+	}
+
+	if isFile(conf.FS, target) {
+		t.Fatalf("target %s exists before running Makefile; want it to not exist yet", target)
+	}
+
+	mk := conf.NewMaker(mf, target)
+	err = mk.Run()
+	if err != nil {
+		t.Fatalf("Run failed: %s", err)
+	}
+
+	if !isFile(conf.FS, target) {
+		t.Fatalf("target %s does not exist after running Makefile; want it to exist", target)
+	}
+}
+
+func isFile(fs rwvfs.FileSystem, file string) bool {
+	fi, err := fs.Stat(file)
+	if err != nil {
+		return false
+	}
+	return fi.Mode().IsRegular()
+}
 
 func TestTargetsNeedingBuild(t *testing.T) {
 	tests := map[string]struct {
