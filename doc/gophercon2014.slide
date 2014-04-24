@@ -44,7 +44,7 @@ Implement your own kinds of rules.
 
 * Example
 
-Then write a standard Makefile to disk, or
+Then write a standard Makefile to disk, or run it in Go:
 
  mf := &Makefile{...}
  conf := makex.Default
