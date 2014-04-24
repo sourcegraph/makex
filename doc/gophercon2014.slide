@@ -16,7 +16,7 @@ No.
 
 - Works like make.
 - Reads and writes existing Makefile format.
-- But instead of just calling `make`, it topo sorts and executes shell commands *individually*.
+- But instead of just calling `make`, it topo sorts in Go and executes shell commands *individually*.
 
 
 * Build tools
@@ -65,7 +65,7 @@ We replaced 2,500 lines of custom "task runner" code, which includes:
 - task dependencies
 - task progress tracking
 
-with code that constructs Makefiles to do the same work.
+with code that uses makex to construct and run Makefiles to do the same work.
 
 In addition to the above, makex lets us:
 
