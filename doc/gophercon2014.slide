@@ -62,8 +62,8 @@ We replaced 2,500 lines of custom "task runner" code, which includes:
 
 - logging per-task output
 - tracking per-task errors
-- task dependencies
-- task progress tracking
+- ordering task dependencies
+- tracking task progress
 
 with code that uses makex to construct and run Makefiles to do the same work.
 
