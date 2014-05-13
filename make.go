@@ -33,6 +33,12 @@ type Maker struct {
 	// os.Stderr are used, respectively.
 	RuleOutput func(Rule) (out io.Writer, err io.Writer, logger *log.Logger)
 
+	// Channels to monitor progress. If non-nil, these channels are called at
+	// various stages of building targets. Ended is always called *after*
+	// Succeeded or Failed.
+	Started, Ended, Succeeded chan<- Rule
+	Failed                    chan<- RuleBuildError
+
 	*Config
 }
 
@@ -204,6 +210,14 @@ func (m *Maker) Run() error {
 				if m.Verbose {
 					log.Printf("building...")
 				}
+				if m.Started != nil {
+					m.Started <- rule
+				}
+				go func() {
+					if m.Ended != nil {
+						m.Ended <- rule
+					}
+				}()
 
 				for _, recipe := range rule.Recipes() {
 					recipe = ExpandAutoVars(rule, recipe)
@@ -224,10 +238,17 @@ func (m *Maker) Run() error {
 						}
 
 						log.Printf(`command failed: %s (%s)`, recipe, err)
-						return fmt.Errorf("command failed: %s (%s)", recipe, err)
+						err2 := RuleBuildError{rule, fmt.Errorf("command failed: %s (%s)", recipe, err)}
+						if m.Failed != nil {
+							m.Failed <- err2
+						}
+						return err2
 					}
 				}
 
+				if m.Succeeded != nil {
+					m.Succeeded <- rule
+				}
 				if m.Verbose {
 					log.Printf("build completed")
 				}
@@ -243,6 +264,13 @@ func (m *Maker) Run() error {
 
 	return nil
 }
+
+type RuleBuildError struct {
+	Rule Rule
+	Err  error
+}
+
+func (e RuleBuildError) Error() string { return e.Err.Error() }
 
 func errNoRuleToMakeTarget(target string) error {
 	return fmt.Errorf("no rule to make target %q", target)
