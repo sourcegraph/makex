@@ -3,6 +3,7 @@ package makex
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 
@@ -30,7 +31,7 @@ type Maker struct {
 	// RuleOutput specifies the writers to receive the stdout and stderr output
 	// from executing a rule's recipes. If RuleOutput is nil, os.Stdout and
 	// os.Stderr are used, respectively.
-	RuleOutput func(r Rule) (out io.Writer, err io.Writer)
+	RuleOutput func(Rule) (out io.Writer, err io.Writer, logger *log.Logger)
 
 	*Config
 }
@@ -181,11 +182,11 @@ func (m *Maker) DryRun(w io.Writer) error {
 
 // ruleOutput determines the io.Writers to receive the stderr and stdout output
 // of a rule's recipe commands.
-func (m *Maker) ruleOutput(r Rule) (stdout io.Writer, stderr io.Writer) {
+func (m *Maker) ruleOutput(r Rule) (stdout io.Writer, stderr io.Writer, logger *log.Logger) {
 	if m.RuleOutput != nil {
 		return m.RuleOutput(r)
 	}
-	return os.Stdout, os.Stderr
+	return os.Stdout, os.Stderr, log.New(os.Stderr, fmt.Sprintf("%s: ", r.Target()), 0)
 }
 
 func (m *Maker) Run() error {
@@ -198,12 +199,16 @@ func (m *Maker) Run() error {
 		par := parallel.NewRun(m.ParallelJobs)
 		for _, target := range targetSet {
 			rule := m.mf.Rule(target)
-			stdout, stderr := m.ruleOutput(rule)
+			stdout, stderr, log := m.ruleOutput(rule)
 			par.Do(func() error {
+				if m.Verbose {
+					log.Printf("building...")
+				}
+
 				for _, recipe := range rule.Recipes() {
 					recipe = ExpandAutoVars(rule, recipe)
 					if m.Verbose {
-						m.Log.Printf("[%s] %s", rule.Target(), recipe)
+						log.Printf("running command: %s", recipe)
 					}
 					cmd := exec.Command("sh", "-c", recipe)
 					cmd.Stdout, cmd.Stderr = stdout, stderr
@@ -214,18 +219,19 @@ func (m *Maker) Run() error {
 						if exists, _ := m.pathExists(rule.Target()); exists {
 							err2 := m.fs().Remove(rule.Target())
 							if err2 != nil {
-								m.Log.Printf("[%s] failed removing target after error: %s", rule.Target(), err)
+								log.Printf("failed to remove target after error: %s", err)
 							}
 						}
 
-						m.Log.Printf(`command failed:
-============================================================
-FAIL: %s
-============================================================
-`, recipe)
-						return fmt.Errorf("[%s] command %q failed: %s", rule.Target(), recipe, err)
+						log.Printf(`command failed: %s (%s)`, recipe, err)
+						return fmt.Errorf("command failed: %s (%s)", recipe, err)
 					}
 				}
+
+				if m.Verbose {
+					log.Printf("build completed")
+				}
+
 				return nil
 			})
 		}

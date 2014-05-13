@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/sourcegraph/rwvfs"
@@ -185,6 +186,11 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				t.Errorf("%s: TargetsNeedingBuild(%q): error: got %q, want %q", label, test.goals, err, test.wantErr)
 				continue
 			}
+		}
+
+		// sort so that test is deterministic
+		for _, ts := range targetSets {
+			sort.Strings(ts)
 		}
 		if !reflect.DeepEqual(targetSets, test.wantTargetSetsNeedingBuild) {
 			t.Errorf("%s: got targetSets needing build %v, want %v", label, targetSets, test.wantTargetSetsNeedingBuild)

@@ -31,25 +31,27 @@ The options are:
 		os.Exit(1)
 	}
 
+	log.SetFlags(0)
+
 	conf := makex.Default
 	makex.Flags(nil, &conf, "")
 	flag.Parse()
 
 	data, err := ioutil.ReadFile(*file)
 	if err != nil {
-		conf.Log.Fatal(err)
+		log.Fatal(err)
 	}
 
 	if *cwd != "" {
 		err := os.Chdir(*cwd)
 		if err != nil {
-			conf.Log.Fatal(err)
+			log.Fatal(err)
 		}
 	}
 
 	mf, err := makex.Parse(data)
 	if err != nil {
-		conf.Log.Fatal(err)
+		log.Fatal(err)
 	}
 
 	goals := flag.Args()
@@ -71,7 +73,7 @@ The options are:
 
 	targetSets, err := mk.TargetSetsNeedingBuild()
 	if err != nil {
-		conf.Log.Fatal(err)
+		log.Fatal(err)
 	}
 
 	if len(targetSets) == 0 {
@@ -85,6 +87,6 @@ The options are:
 
 	err = mk.Run()
 	if err != nil {
-		conf.Log.Fatal(err)
+		log.Fatal(err)
 	}
 }

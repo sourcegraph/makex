@@ -2,7 +2,6 @@ package makex
 
 import (
 	"flag"
-	"log"
 	"os"
 	"runtime"
 
@@ -12,14 +11,12 @@ import (
 type Config struct {
 	FS           FileSystem
 	ParallelJobs int
-	Log          *log.Logger
 	Verbose      bool
 	DryRun       bool
 }
 
 var Default = Config{
 	ParallelJobs: 1,
-	Log:          log.New(os.Stderr, "makex: ", 0),
 }
 
 func (c *Config) fs() FileSystem {
