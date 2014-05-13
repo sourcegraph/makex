@@ -1,7 +1,6 @@
 package makex
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -27,6 +26,11 @@ type Maker struct {
 	dag    map[string][]string
 	topo   [][]string
 	cycles map[string][]string
+
+	// RuleOutput specifies the writers to receive the stdout and stderr output
+	// from executing a rule's recipes. If RuleOutput is nil, os.Stdout and
+	// os.Stderr are used, respectively.
+	RuleOutput func(r Rule) (out io.Writer, err io.Writer)
 
 	*Config
 }
@@ -175,6 +179,15 @@ func (m *Maker) DryRun(w io.Writer) error {
 	return nil
 }
 
+// ruleOutput determines the io.Writers to receive the stderr and stdout output
+// of a rule's recipe commands.
+func (m *Maker) ruleOutput(r Rule) (stdout io.Writer, stderr io.Writer) {
+	if m.RuleOutput != nil {
+		return m.RuleOutput(r)
+	}
+	return os.Stdout, os.Stderr
+}
+
 func (m *Maker) Run() error {
 	targetSets, err := m.TargetSetsNeedingBuild()
 	if err != nil {
@@ -185,6 +198,7 @@ func (m *Maker) Run() error {
 		par := parallel.NewRun(m.ParallelJobs)
 		for _, target := range targetSet {
 			rule := m.mf.Rule(target)
+			stdout, stderr := m.ruleOutput(rule)
 			par.Do(func() error {
 				for _, recipe := range rule.Recipes() {
 					recipe = ExpandAutoVars(rule, recipe)
@@ -192,16 +206,8 @@ func (m *Maker) Run() error {
 						m.Log.Printf("[%s] %s", rule.Target(), recipe)
 					}
 					cmd := exec.Command("sh", "-c", recipe)
+					cmd.Stdout, cmd.Stderr = stdout, stderr
 
-					var buf bytes.Buffer
-					var out io.Writer
-					if m.Verbose {
-						out = io.MultiWriter(os.Stderr)
-					} else {
-						out = &buf
-					}
-
-					cmd.Stdout, cmd.Stderr = out, out
 					err := cmd.Run()
 					if err != nil {
 						// remove files if failed
@@ -215,10 +221,8 @@ func (m *Maker) Run() error {
 						m.Log.Printf(`command failed:
 ============================================================
 FAIL: %s
-------------------------------------------------------------
-%s
 ============================================================
-`, recipe, buf.String())
+`, recipe)
 						return fmt.Errorf("[%s] command %q failed: %s", rule.Target(), recipe, err)
 					}
 				}
