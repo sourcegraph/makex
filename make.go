@@ -29,9 +29,10 @@ type Maker struct {
 	cycles map[string][]string
 
 	// RuleOutput specifies the writers to receive the stdout and stderr output
-	// from executing a rule's recipes. If RuleOutput is nil, os.Stdout and
-	// os.Stderr are used, respectively.
-	RuleOutput func(Rule) (out io.Writer, err io.Writer, logger *log.Logger)
+	// from executing a rule's recipes. After executing a rule, out and err are
+	// closed. If RuleOutput is nil, os.Stdout and
+	// os.Stderr are used, respectively (but not closed after use).
+	RuleOutput func(Rule) (out io.WriteCloser, err io.WriteCloser, logger *log.Logger)
 
 	// Channels to monitor progress. If non-nil, these channels are called at
 	// various stages of building targets. Ended is always called *after*
@@ -188,11 +189,11 @@ func (m *Maker) DryRun(w io.Writer) error {
 
 // ruleOutput determines the io.Writers to receive the stderr and stdout output
 // of a rule's recipe commands.
-func (m *Maker) ruleOutput(r Rule) (stdout io.Writer, stderr io.Writer, logger *log.Logger) {
+func (m *Maker) ruleOutput(r Rule) (stdout io.WriteCloser, stderr io.WriteCloser, logger *log.Logger) {
 	if m.RuleOutput != nil {
 		return m.RuleOutput(r)
 	}
-	return os.Stdout, os.Stderr, log.New(os.Stderr, fmt.Sprintf("%s: ", r.Target()), 0)
+	return nopCloser{os.Stdout}, nopCloser{os.Stderr}, log.New(os.Stderr, fmt.Sprintf("%s: ", r.Target()), 0)
 }
 
 func (m *Maker) Run() error {
@@ -213,7 +214,7 @@ func (m *Maker) Run() error {
 				if m.Started != nil {
 					m.Started <- rule
 				}
-				go func() {
+				defer func() {
 					if m.Ended != nil {
 						m.Ended <- rule
 					}
@@ -279,3 +280,9 @@ func errNoRuleToMakeTarget(target string) error {
 func errCircularDependency(target string, deps []string) error {
 	return fmt.Errorf("circular dependency for target %q: %v", target, deps)
 }
+
+type nopCloser struct {
+	io.Writer
+}
+
+func (nc nopCloser) Close() error { return nil }
