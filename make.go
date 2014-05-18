@@ -206,8 +206,8 @@ func (m *Maker) Run() error {
 		par := parallel.NewRun(m.ParallelJobs)
 		for _, target := range targetSet {
 			rule := m.mf.Rule(target)
-			stdout, stderr, log := m.ruleOutput(rule)
 			par.Do(func() error {
+				stdout, stderr, log := m.ruleOutput(rule)
 				if m.Verbose {
 					log.Printf("building...")
 				}
