@@ -214,6 +214,8 @@ func (m *Maker) Run() error {
 				if m.Started != nil {
 					m.Started <- rule
 				}
+				defer stdout.Close()
+				defer stderr.Close()
 				defer func() {
 					if m.Ended != nil {
 						m.Ended <- rule
