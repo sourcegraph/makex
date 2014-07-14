@@ -3,6 +3,7 @@ package makex
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -31,6 +32,7 @@ func Parse(data []byte) (*Makefile, error) {
 			}
 			target := targets[0]
 			prereqs := strings.Fields(line[sep+1:])
+			prereqs = uniqAndSort(prereqs)
 			rule = &BasicRule{TargetFile: target, PrereqFiles: prereqs}
 			mf.Rules = append(mf.Rules, rule)
 		} else {
@@ -43,4 +45,15 @@ func Parse(data []byte) (*Makefile, error) {
 
 func errMultipleTargetsUnsupported(lineno int) error {
 	return fmt.Errorf("line %d: rule with multiple targets is yet implemented", lineno)
+}
+
+func uniqAndSort(strs []string) []string {
+	sort.Strings(strs)
+	uniq := make([]string, 0, len(strs))
+	for i, s := range strs {
+		if i == 0 || strs[i-1] != s {
+			uniq = append(uniq, s)
+		}
+	}
+	return uniq
 }

@@ -25,6 +25,10 @@ func TestParse(t *testing.T) {
 			data:         `x : y0 y1`,
 			wantMakefile: &Makefile{Rules: []Rule{&BasicRule{"x", []string{"y0", "y1"}, nil}}},
 		},
+		"rule with duplicate prereqs": {
+			data:         `x : y0 y1 y0 y1 y1`,
+			wantMakefile: &Makefile{Rules: []Rule{&BasicRule{"x", []string{"y0", "y1"}, nil}}},
+		},
 		"multiple rules": {
 			data: `
 x0:y0

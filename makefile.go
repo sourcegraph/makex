@@ -93,7 +93,6 @@ func (c *Config) Expand(orig *Makefile) (*Makefile, error) {
 			PrereqFiles: expandedPrereqs,
 			RecipeCmds:  rule.Recipes(),
 		}
-
 	}
 	return &mf, nil
 }
