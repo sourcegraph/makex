@@ -108,6 +108,8 @@ func (c *Config) globs(patterns []string) (matches []string, err error) {
 				return nil, err
 			}
 			matches = append(matches, files...)
+		} else {
+			matches = append(matches, pattern)
 		}
 	}
 	return
