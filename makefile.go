@@ -139,6 +139,13 @@ func globPrefix(path string) string {
 func ExpandAutoVars(rule Rule, s string) string {
 	s = strings.Replace(s, "$@", Quote(rule.Target()), -1)
 	s = strings.Replace(s, "$^", strings.Join(QuoteList(rule.Prereqs()), " "), -1)
+
+	var firstPrereq string
+	if len(rule.Prereqs()) > 0 {
+		firstPrereq = Quote(rule.Prereqs()[0])
+	}
+	s = strings.Replace(s, "$<", firstPrereq, -1)
+
 	return s
 }
 

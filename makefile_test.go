@@ -35,3 +35,32 @@ myTarget: myPrereq0 myPrereq1
 		}
 	}
 }
+
+func TestExpandAutoVars(t *testing.T) {
+	tests := []struct {
+		rule  Rule
+		input string
+		want  string
+	}{
+		{
+			rule: &BasicRule{
+				"myTarget",
+				[]string{"myPrereq0", "myPrereq1"},
+				[]string{"foo bar"},
+			},
+			input: "$@ : $^ : $<",
+			want:  "myTarget : myPrereq0 myPrereq1 : myPrereq0",
+		},
+		{
+			rule:  &BasicRule{PrereqFiles: []string{}},
+			input: "$<",
+			want:  "",
+		},
+	}
+	for _, test := range tests {
+		got := ExpandAutoVars(test.rule, test.input)
+		if got != test.want {
+			t.Errorf("got %q, want %q", got, test.want)
+		}
+	}
+}
