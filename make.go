@@ -209,9 +209,6 @@ func (m *Maker) Run() error {
 			rule := m.mf.Rule(target)
 			par.Do(func() error {
 				stdout, stderr, log := m.ruleOutput(rule)
-				if m.Verbose {
-					log.Printf("building...")
-				}
 				if m.Started != nil {
 					m.Started <- rule
 				}
@@ -252,9 +249,6 @@ func (m *Maker) Run() error {
 
 				if m.Succeeded != nil {
 					m.Succeeded <- rule
-				}
-				if m.Verbose {
-					log.Printf("build completed")
 				}
 
 				return nil
