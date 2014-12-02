@@ -8,7 +8,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/rwvfs"
+	"sourcegraph.com/sourcegraph/rwvfs"
 )
 
 func TestMaker_DryRun(t *testing.T) {

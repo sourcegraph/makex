@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/rwvfs"
+	"sourcegraph.com/sourcegraph/rwvfs"
 )
 
 // Makefile represents a set of rules, each describing how to build a target.
