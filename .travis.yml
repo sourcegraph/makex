@@ -4,6 +4,11 @@ go:
   - 1.2
   - tip
 
+before_install:
+  - mkdir -p $HOME/gopath/src/sourcegraph.com/sourcegraph
+  - mv $TRAVIS_BUILD_DIR $HOME/gopath/src/sourcegraph.com/sourcegraph/makex
+  - export TRAVIS_BUILD_DIR=$HOME/gopath/src/sourcegraph.com/sourcegraph/makex
+
 install:
   - go get -d -v ./... && go build -v ./...
 

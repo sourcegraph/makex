@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/sourcegraph/makex"
+	"sourcegraph.com/sourcegraph/makex"
 )
 
 var expand = flag.Bool("x", true, "expand globs in makefile prereqs")

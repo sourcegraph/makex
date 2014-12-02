@@ -2,19 +2,15 @@
 
 **makex** is a `make` clone for Go that makes it easier to write build tools in Go. It lets you define tasks and dependencies in the familiar Makefile format, and unlike just shelling out to `make`, it gives you programmatic access (in Go) to the progress and console output of your tasks. We use makex at [Sourcegraph](https://sourcegraph.com) to compile and analyze hundreds of thousands of your open-source projects.
 
-Documentation: [makex on Sourcegraph](https://sourcegraph.com/github.com/sourcegraph/makex)
+Documentation: [makex on Sourcegraph](https://sourcegraph.com/sourcegraph.com/sourcegraph/makex)
 
 [![Build Status](https://travis-ci.org/sourcegraph/makex.png?branch=master)](https://travis-ci.org/sourcegraph/makex)
-[![status](https://sourcegraph.com/api/repos/github.com/sourcegraph/makex/badges/status.png)](https://sourcegraph.com/github.com/sourcegraph/makex)
-[![xrefs](https://sourcegraph.com/api/repos/github.com/sourcegraph/makex/badges/xrefs.png)](https://sourcegraph.com/github.com/sourcegraph/makex)
-[![funcs](https://sourcegraph.com/api/repos/github.com/sourcegraph/makex/badges/funcs.png)](https://sourcegraph.com/github.com/sourcegraph/makex)
-[![top func](https://sourcegraph.com/api/repos/github.com/sourcegraph/makex/badges/top-func.png)](https://sourcegraph.com/github.com/sourcegraph/makex)
-[![library users](https://sourcegraph.com/api/repos/github.com/sourcegraph/makex/badges/library-users.png)](https://sourcegraph.com/github.com/sourcegraph/makex)
+[![status](https://sourcegraph.com/api/repos/sourcegraph.com/sourcegraph/makex/badges/status.png)](https://sourcegraph.com/sourcegraph.com/sourcegraph/makex)
 
 ## Install
 
 ```
-go get github.com/sourcegraph/makex/cmd/makex
+go get sourcegraph.com/sourcegraph/makex/cmd/makex
 makex -h
 ```
 
