@@ -10,7 +10,7 @@ import (
 	"code.google.com/p/rog-go/parallel"
 )
 
-// TargetsNeedingBuild returns an ordered list of target sets
+// NewMaker creates a new Maker, which can build goals in a Makefile.
 func (c *Config) NewMaker(mf *Makefile, goals ...string) *Maker {
 	m := &Maker{
 		mf:     mf,
@@ -21,6 +21,7 @@ func (c *Config) NewMaker(mf *Makefile, goals ...string) *Maker {
 	return m
 }
 
+// A Maker can build goals in a Makefile.
 type Maker struct {
 	mf     *Makefile
 	goals  []string
@@ -43,6 +44,8 @@ type Maker struct {
 	*Config
 }
 
+// buildDAG topologically sorts the targets based on their
+// dependencies.
 func (m *Maker) buildDAG() {
 	// topological sort taken from
 	// http://rosettacode.org/wiki/Topological_sort#Go.
@@ -129,10 +132,15 @@ func (m *Maker) buildDAG() {
 	}
 }
 
+// TargetSets returns a topologically sorted list of sets of target
+// names. To only get targets that are stale and need to be built, use
+// TargetSetsNeedingBuild.
 func (m *Maker) TargetSets() [][]string {
 	return m.topo
 }
 
+// TargetSetsNeedingBuild returns a topologically sorted list of sets
+// of target names that need to be built (i.e., that are stale).
 func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 	for _, goal := range m.goals {
 		if rule := m.mf.Rule(goal); rule == nil {
@@ -197,6 +205,7 @@ func (m *Maker) ruleOutput(r Rule) (stdout io.WriteCloser, stderr io.WriteCloser
 	return nopCloser{os.Stdout}, nopCloser{os.Stderr}, log.New(os.Stderr, fmt.Sprintf("%s: ", r.Target()), 0)
 }
 
+// Run builds all stale targets.
 func (m *Maker) Run() error {
 	targetSets, err := m.TargetSetsNeedingBuild()
 	if err != nil {
