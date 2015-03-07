@@ -1,12 +1,14 @@
 package makex
 
 import (
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	"sourcegraph.com/sourcegraph/rwvfs"
 )
@@ -68,11 +70,87 @@ func isFile(fs rwvfs.FileSystem, file string) bool {
 	return fi.Mode().IsRegular()
 }
 
+func newModTimeFileSystem(fs rwvfs.FileSystem) FileSystem {
+	return modTimeFileSystem{walkableRWVFS{fs}, map[string]time.Time{}}
+}
+
+// modTimeFileSystem stores and retrieves mtimes independently of
+// walkableRWVFS. For a new modTimeFileSystem, all of the mtimes are
+// the zero value for time.Time. If a file is created and closed, the
+// current time is stored as its mtime.
+type modTimeFileSystem struct {
+	walkableRWVFS
+	modTimes map[string]time.Time
+}
+
+type modTimeFileInfo struct {
+	modTime time.Time
+	name    string
+	mode    os.FileMode
+	size    int64
+	dir     bool
+}
+
+func (fi modTimeFileInfo) IsDir() bool        { return fi.dir }
+func (fi modTimeFileInfo) ModTime() time.Time { return fi.modTime }
+func (fi modTimeFileInfo) Mode() os.FileMode  { return fi.mode }
+func (fi modTimeFileInfo) Name() string       { return fi.name }
+func (fi modTimeFileInfo) Size() int64        { return fi.size }
+func (fi modTimeFileInfo) Sys() interface{}   { return nil }
+
+func (m modTimeFileSystem) Stat(path string) (os.FileInfo, error) {
+	fi, err := m.walkableRWVFS.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+	return modTimeFileInfo{
+		modTime: m.modTimes[filepath.Clean(path)],
+		name:    fi.Name(),
+		mode:    fi.Mode(),
+		size:    fi.Size(),
+		dir:     fi.IsDir(),
+	}, nil
+}
+
+func (m modTimeFileSystem) Lstat(path string) (os.FileInfo, error) {
+	fi, err := m.walkableRWVFS.Lstat(path)
+	if err != nil {
+		return nil, err
+	}
+	return modTimeFileInfo{
+		modTime: m.modTimes[filepath.Clean(path)],
+		name:    fi.Name(),
+		mode:    fi.Mode(),
+		size:    fi.Size(),
+		dir:     fi.IsDir(),
+	}, nil
+}
+
+func (m modTimeFileSystem) Create(path string) (io.WriteCloser, error) {
+	f, err := m.walkableRWVFS.Create(path)
+	return modTimeFile{f, path, m.modTimes}, err
+}
+
+type modTimeFile struct {
+	io.WriteCloser
+	path     string
+	modTimes map[string]time.Time
+}
+
+func (m modTimeFile) Close() error {
+	m.modTimes[filepath.Clean(m.path)] = time.Now()
+	return m.WriteCloser.Close()
+}
+
 func TestTargetsNeedingBuild(t *testing.T) {
 	tests := map[string]struct {
-		mf                         *Makefile
-		fs                         FileSystem
-		goals                      []string
+		mf    *Makefile
+		fs    FileSystem
+		goals []string
+		// If afterMake is set, the test will run 'make' once,
+		// call afterMake with fs, and then check the test
+		// conditions.
+		afterMake                  func(fs FileSystem) error
 		wantErr                    error
 		wantTargetSetsNeedingBuild [][]string
 	}{
@@ -95,6 +173,28 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			mf:    &Makefile{Rules: []Rule{&BasicRule{TargetFile: "x"}}},
 			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals: []string{"x"},
+			wantTargetSetsNeedingBuild: [][]string{{"x"}},
+		},
+		"build only target with stale prereq": {
+			mf: &Makefile{Rules: []Rule{
+				&BasicRule{TargetFile: "x", PrereqFiles: []string{"x1"}},
+				&BasicRule{TargetFile: "y", PrereqFiles: []string{"y1"}},
+			}},
+			fs: newModTimeFileSystem(rwvfs.Map(map[string]string{
+				"x": "", "x1": "", "y": "", "y1": "",
+			})),
+			afterMake: func(fs FileSystem) error {
+				w, err := fs.Create("x1")
+				if err != nil {
+					return err
+				}
+				defer w.Close()
+				if _, err := io.WriteString(w, "modified"); err != nil {
+					return err
+				}
+				return nil
+			},
+			goals: []string{"x", "y"},
 			wantTargetSetsNeedingBuild: [][]string{{"x"}},
 		},
 		"build targets recursively that don't exist": {
@@ -177,6 +277,14 @@ func TestTargetsNeedingBuild(t *testing.T) {
 	for label, test := range tests {
 		conf := &Config{FS: test.fs}
 		mk := conf.NewMaker(test.mf, test.goals...)
+		if test.afterMake != nil {
+			if err := mk.Run(); err != nil {
+				t.Fatal(err)
+			}
+			if err := test.afterMake(test.fs); err != nil {
+				t.Fatal(err)
+			}
+		}
 		targetSets, err := mk.TargetSetsNeedingBuild()
 		if !reflect.DeepEqual(err, test.wantErr) {
 			if test.wantErr == nil {
