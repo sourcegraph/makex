@@ -240,7 +240,8 @@ func (m *Maker) Run() error {
 		return err
 	}
 
-	for _, targetSet := range targetSets {
+	for i, targetSet := range targetSets {
+		m.logTargetSetStart(i, targetSet)
 		par := parallel.NewRun(m.ParallelJobs)
 		for _, target := range targetSet {
 			rule := m.mf.Rule(target)
@@ -298,6 +299,15 @@ func (m *Maker) Run() error {
 	}
 
 	return nil
+}
+
+func (m *Maker) logTargetSetStart(idx int, targetSet []string) {
+	if m.Verbose {
+		if idx != 0 {
+			fmt.Fprintln(os.Stderr)
+		}
+		fmt.Fprintf(os.Stderr, "========= TARGET SET %d (%d targets)\n", idx, len(targetSet))
+	}
 }
 
 type RuleBuildError struct {
