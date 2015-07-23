@@ -43,7 +43,10 @@ func (c *Config) pathExists(path string) (bool, error) {
 
 func (c *Config) modTime(path string) (time.Time, error) {
 	s, err := c.fs().Stat(path)
-	return s.ModTime(), err
+	if err != nil {
+		return time.Time{}, err
+	}
+	return s.ModTime(), nil
 }
 
 // Flags adds makex command-line flags to an existing flag.FlagSet (or the
