@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"code.google.com/p/rog-go/parallel"
+	"github.com/rogpeppe/rog-go/parallel"
 )
 
 // NewMaker creates a new Maker, which can build goals in a Makefile.
@@ -163,6 +163,11 @@ func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 	for _, targetSet := range m.topo {
 		var targetsNeedingBuild []string
 		for _, target := range targetSet {
+			// Always build .PHONY target
+			if isPhony(m, target) {
+				targetsNeedingBuild = append(targetsNeedingBuild, target)
+				continue
+			}
 			exists, err := m.pathExists(target)
 			if err != nil {
 				return nil, err
@@ -185,6 +190,10 @@ func (m *Maker) TargetSetsNeedingBuild() ([][]string, error) {
 				return nil, errNoRuleToMakeTarget(target)
 			}
 			for _, p := range rule.Prereqs() {
+				if isPhony(m, p) {
+					targetsNeedingBuild = append(targetsNeedingBuild, target)
+					break
+				}
 				m, err := m.modTime(p)
 				if err != nil {
 					return nil, err
@@ -330,3 +339,19 @@ type nopCloser struct {
 }
 
 func (nc nopCloser) Close() error { return nil }
+
+// isPhony returns true if target is a .PHONY's prerequisite
+func isPhony(m *Maker, target string) bool {
+	rule := m.mf.Rule(".PHONY")
+	if rule == nil {
+		return false
+	}
+
+	for _, p := range rule.Prereqs() {
+		if p == target {
+			return true
+		}
+	}
+
+	return false
+}

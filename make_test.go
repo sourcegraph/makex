@@ -42,7 +42,7 @@ func TestMaker_Run(t *testing.T) {
 		Rules: []Rule{
 			&BasicRule{
 				TargetFile: target,
-				RecipeCmds: []string{"touch " + filepath.Join(tmpDir, target)},
+				RecipeCmds: []string{"touch " + filepath.ToSlash(filepath.Join(tmpDir, target))},
 			},
 		},
 	}
@@ -271,6 +271,29 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			fs:      NewFileSystem(rwvfs.Map(map[string]string{})),
 			goals:   []string{"x0"},
 			wantErr: errCircularDependency("x0", []string{"x1"}),
+		},
+		"re-build .PHONY target": {
+			mf: &Makefile{Rules: []Rule{
+				&BasicRule{TargetFile: ".PHONY", PrereqFiles: []string{"all"}},
+				&BasicRule{TargetFile: "all", PrereqFiles: []string{"file"}},
+			}},
+			fs: newModTimeFileSystem(rwvfs.Map(map[string]string{
+				"all": "", "file": "",
+			})),
+			goals: []string{"all"},
+			wantTargetSetsNeedingBuild: [][]string{{"all"}},
+		},
+		"re-build .PHONY pre-requisite": {
+			mf: &Makefile{Rules: []Rule{
+				&BasicRule{TargetFile: ".PHONY", PrereqFiles: []string{"all", "compile"}},
+				&BasicRule{TargetFile: "all", PrereqFiles: []string{"compile"}},
+				&BasicRule{TargetFile: "compile", PrereqFiles: []string{"file"}},
+			}},
+			fs: newModTimeFileSystem(rwvfs.Map(map[string]string{
+				"all": "", "compile": "", "file": "",
+			})),
+			goals: []string{"all"},
+			wantTargetSetsNeedingBuild: [][]string{{"compile"}, {"all"}},
 		},
 	}
 
