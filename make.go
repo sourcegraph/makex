@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/rogpeppe/rog-go/parallel"
+	"github.com/neelance/parallel"
 )
 
 // NewMaker creates a new Maker, which can build goals in a Makefile.
@@ -254,7 +254,10 @@ func (m *Maker) Run() error {
 		par := parallel.NewRun(m.ParallelJobs)
 		for _, target := range targetSet {
 			rule := m.mf.Rule(target)
-			par.Do(func() error {
+			par.Acquire()
+			go func() {
+				defer par.Release()
+
 				stdout, stderr, log := m.ruleOutput(rule)
 				if m.Started != nil {
 					m.Started <- rule
@@ -290,16 +293,15 @@ func (m *Maker) Run() error {
 						if m.Failed != nil {
 							m.Failed <- err2
 						}
-						return err2
+						par.Error(err2)
+						return
 					}
 				}
 
 				if m.Succeeded != nil {
 					m.Succeeded <- rule
 				}
-
-				return nil
-			})
+			}()
 		}
 		err := par.Wait()
 		if err != nil {
