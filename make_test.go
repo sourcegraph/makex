@@ -155,7 +155,7 @@ func TestTargetsNeedingBuild(t *testing.T) {
 		wantTargetSetsNeedingBuild [][]string
 	}{
 		"do nothing if empty": {
-			mf: &Makefile{},
+			mf:                         &Makefile{},
 			wantTargetSetsNeedingBuild: [][]string{},
 		},
 		"return error if target isn't defined in Makefile": {
@@ -164,15 +164,15 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			wantErr: errNoRuleToMakeTarget("x"),
 		},
 		"don't build target that already exists": {
-			mf:    &Makefile{Rules: []Rule{&BasicRule{TargetFile: "x"}}},
-			fs:    NewFileSystem(rwvfs.Map(map[string]string{"x": ""})),
-			goals: []string{"x"},
+			mf:                         &Makefile{Rules: []Rule{&BasicRule{TargetFile: "x"}}},
+			fs:                         NewFileSystem(rwvfs.Map(map[string]string{"x": ""})),
+			goals:                      []string{"x"},
 			wantTargetSetsNeedingBuild: [][]string{},
 		},
 		"build target that doesn't exist": {
-			mf:    &Makefile{Rules: []Rule{&BasicRule{TargetFile: "x"}}},
-			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals: []string{"x"},
+			mf:                         &Makefile{Rules: []Rule{&BasicRule{TargetFile: "x"}}},
+			fs:                         NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:                      []string{"x"},
 			wantTargetSetsNeedingBuild: [][]string{{"x"}},
 		},
 		"build only target with stale prereq": {
@@ -194,7 +194,7 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				}
 				return nil
 			},
-			goals: []string{"x", "y"},
+			goals:                      []string{"x", "y"},
 			wantTargetSetsNeedingBuild: [][]string{{"x"}},
 		},
 		"build targets recursively that don't exist": {
@@ -202,8 +202,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				&BasicRule{TargetFile: "x0", PrereqFiles: []string{"x1"}},
 				&BasicRule{TargetFile: "x1"},
 			}},
-			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals: []string{"x0"},
+			fs:                         NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:                      []string{"x0"},
 			wantTargetSetsNeedingBuild: [][]string{{"x1"}, {"x0"}},
 		},
 
@@ -212,8 +212,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				&BasicRule{TargetFile: "x0"},
 				&BasicRule{TargetFile: "x1"},
 			}},
-			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals: []string{"x0"},
+			fs:                         NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:                      []string{"x0"},
 			wantTargetSetsNeedingBuild: [][]string{{"x0"}},
 		},
 		"don't build targets that don't achieve goals (complex)": {
@@ -222,8 +222,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				&BasicRule{TargetFile: "x1"},
 				&BasicRule{TargetFile: "y"},
 			}},
-			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals: []string{"x0"},
+			fs:                         NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:                      []string{"x0"},
 			wantTargetSetsNeedingBuild: [][]string{{"y"}, {"x0"}},
 		},
 		"don't build targets that don't achieve goals (even when a common prereq is satisfied)": {
@@ -232,8 +232,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				&BasicRule{TargetFile: "x1", PrereqFiles: []string{"y"}},
 				&BasicRule{TargetFile: "y"},
 			}},
-			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals: []string{"x0"},
+			fs:                         NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:                      []string{"x0"},
 			wantTargetSetsNeedingBuild: [][]string{{"y"}, {"x0"}},
 		},
 
@@ -241,8 +241,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			mf: &Makefile{Rules: []Rule{
 				&BasicRule{TargetFile: "x0"},
 			}},
-			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals: []string{"x0", "x0"},
+			fs:                         NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:                      []string{"x0", "x0"},
 			wantTargetSetsNeedingBuild: [][]string{{"x0"}},
 		},
 		"don't build any targets more than once": {
@@ -251,8 +251,8 @@ func TestTargetsNeedingBuild(t *testing.T) {
 				&BasicRule{TargetFile: "x1", PrereqFiles: []string{"y"}},
 				&BasicRule{TargetFile: "y"},
 			}},
-			fs:    NewFileSystem(rwvfs.Map(map[string]string{})),
-			goals: []string{"x0", "x1"},
+			fs:                         NewFileSystem(rwvfs.Map(map[string]string{})),
+			goals:                      []string{"x0", "x1"},
 			wantTargetSetsNeedingBuild: [][]string{{"y"}, {"x0", "x1"}},
 		},
 		"detect 1-cycles": {
@@ -280,7 +280,7 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			fs: newModTimeFileSystem(rwvfs.Map(map[string]string{
 				"all": "", "file": "",
 			})),
-			goals: []string{"all"},
+			goals:                      []string{"all"},
 			wantTargetSetsNeedingBuild: [][]string{{"all"}},
 		},
 		"re-build .PHONY pre-requisite": {
@@ -292,7 +292,7 @@ func TestTargetsNeedingBuild(t *testing.T) {
 			fs: newModTimeFileSystem(rwvfs.Map(map[string]string{
 				"all": "", "compile": "", "file": "",
 			})),
-			goals: []string{"all"},
+			goals:                      []string{"all"},
 			wantTargetSetsNeedingBuild: [][]string{{"compile"}, {"all"}},
 		},
 	}
