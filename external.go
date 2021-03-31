@@ -1,7 +1,6 @@
 package makex
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -9,13 +8,13 @@ import (
 // External runs makefile using the system `make` tool, optionally passing extra
 // args.
 func External(dir string, makefile []byte, args []string) ([]byte, error) {
-	tmpFile, err := ioutil.TempFile("", "sg-makefile")
+	tmpFile, err := os.CreateTemp("", "sg-makefile")
 	if err != nil {
 		return nil, err
 	}
 	defer os.Remove(tmpFile.Name())
 
-	err = ioutil.WriteFile(tmpFile.Name(), makefile, 0600)
+	err = os.WriteFile(tmpFile.Name(), makefile, 0600)
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -37,7 +36,7 @@ The options are:
 	makex.Flags(nil, &conf, "")
 	flag.Parse()
 
-	data, err := ioutil.ReadFile(*file)
+	data, err := os.ReadFile(*file)
 	if err != nil {
 		log.Fatal(err)
 	}
