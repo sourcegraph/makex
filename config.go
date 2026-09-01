@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"sourcegraph.com/sourcegraph/rwvfs"
+	"github.com/sourcegraph/rwvfs"
 )
 
 type Config struct {

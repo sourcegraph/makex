@@ -3,7 +3,7 @@ package makex
 import (
 	"path/filepath"
 
-	"sourcegraph.com/sourcegraph/rwvfs"
+	"github.com/sourcegraph/rwvfs"
 )
 
 // A FileSystem is a file system that can be read, written, and walked. Given an

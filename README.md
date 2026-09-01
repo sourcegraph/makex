@@ -2,15 +2,12 @@
 
 **makex** is a `make` clone for Go that makes it easier to write build tools in Go. It lets you define tasks and dependencies in the familiar Makefile format, and unlike just shelling out to `make`, it gives you programmatic access (in Go) to the progress and console output of your tasks. We use makex at [Sourcegraph](https://sourcegraph.com) to compile and analyze hundreds of thousands of your open-source projects.
 
-Documentation: [makex on Sourcegraph](https://sourcegraph.com/sourcegraph.com/sourcegraph/makex)
-
-[![Build Status](https://travis-ci.org/sourcegraph/makex.png?branch=master)](https://travis-ci.org/sourcegraph/makex)
-[![status](https://sourcegraph.com/api/repos/sourcegraph.com/sourcegraph/makex/badges/status.png)](https://sourcegraph.com/sourcegraph.com/sourcegraph/makex)
+Documentation: [makex on Sourcegraph](https://sourcegraph.com/github.com/sourcegraph/makex)
 
 ## Install
 
 ```
-go get sourcegraph.com/sourcegraph/makex/cmd/makex
+go install github.com/sourcegraph/makex/cmd/makex@latest
 makex -h
 ```
 

@@ -3,11 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
-	"sourcegraph.com/sourcegraph/makex"
+	"github.com/sourcegraph/makex"
 )
 
 var expand = flag.Bool("x", true, "expand globs in makefile prereqs")
@@ -16,7 +15,7 @@ var file = flag.String("f", "Makefile", "path to Makefile")
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, `makex is an experimental, incomplete implementation of make in Go.
+		fmt.Fprint(os.Stderr, `makex is an experimental, incomplete implementation of make in Go.
 
 Usage:
 
@@ -26,6 +25,7 @@ If no targets are specified, the first target that appears in the makefile (not
 beginning with ".") is used.
 
 The options are:
+
 `)
 		flag.PrintDefaults()
 		os.Exit(1)
@@ -37,7 +37,7 @@ The options are:
 	makex.Flags(nil, &conf, "")
 	flag.Parse()
 
-	data, err := ioutil.ReadFile(*file)
+	data, err := os.ReadFile(*file)
 	if err != nil {
 		log.Fatal(err)
 	}

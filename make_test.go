@@ -2,7 +2,6 @@ package makex
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -10,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"sourcegraph.com/sourcegraph/rwvfs"
+	"github.com/sourcegraph/rwvfs"
 )
 
 func TestMaker_DryRun(t *testing.T) {
@@ -19,14 +18,14 @@ func TestMaker_DryRun(t *testing.T) {
 		Rules: []Rule{&BasicRule{TargetFile: "x"}},
 	}
 	mk := conf.NewMaker(mf, "x")
-	err := mk.DryRun(ioutil.Discard)
+	err := mk.DryRun(io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestMaker_Run(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "makex")
+	tmpDir, err := os.MkdirTemp("", "makex")
 	if err != nil {
 		t.Fatal(err)
 	}

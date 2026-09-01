@@ -3,10 +3,15 @@ package makex
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"testing"
 )
 
 func TestExternal(t *testing.T) {
+	if _, err := exec.LookPath("make"); err != nil {
+		t.Skip("skipping: External requires the system `make` binary, which is not in PATH")
+	}
+
 	tests := []struct {
 		makefile   string
 		extraArgs  []string
